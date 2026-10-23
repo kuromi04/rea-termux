@@ -24,6 +24,14 @@ npm run build:termux
 echo "Verificando instalación..."
 node scripts/rea.mjs --version || node scripts/rea.mjs --help
 
+echo "Creando comando global 'rea' en Termux..."
+cat << 'RUNNER' > $PREFIX/bin/rea
+#!/data/data/com.termux/files/usr/bin/bash
+exec node /data/data/com.termux/files/home/Projects/AI-Haklab-Repo/rea/scripts/rea.mjs "$@"
+RUNNER
+chmod +x $PREFIX/bin/rea
+
 echo "=== [REA Termux] ¡Instalación y compilación completada con éxito! ==="
-echo "Puedes ejecutar el CLI con: node /ruta/a/rea/scripts/rea.mjs <comando>"
-echo "O como servidor MCP: node /ruta/a/rea/scripts/rea.mjs mcp"
+echo "Ahora puedes usar directamente: rea <comando>"
+echo "Ejemplo: rea --version"
+echo "O como servidor MCP: rea mcp"
