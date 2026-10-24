@@ -322,7 +322,19 @@
       tag.innerText = node.category || 'NODE';
       tag.style.backgroundColor = node.color || '#00f3ff';
       desc.innerText = node.desc || 'Sin descripción';
-      cmdInput.value = node.cmd || (node.category === 'ROOT' ? 'rea --help' : `rea ${node.id}`);
+      if (node.isCluster) {
+        cmdInput.value = "rea --help";
+        cmdInput.disabled = true;
+        document.getElementById("exec-btn").disabled = true;
+        document.querySelector(".btn-copy").style.display = "none";
+        document.querySelector(".btn-help").style.display = "none";
+      } else {
+        cmdInput.value = node.cmd || `rea ${node.id}`;
+        cmdInput.disabled = false;
+        document.getElementById("exec-btn").disabled = false;
+        document.querySelector(".btn-copy").style.display = "inline-block";
+        document.querySelector(".btn-help").style.display = "inline-block";
+      }
 
       // Enfocar cámara en el nodo
       const distance = 140;

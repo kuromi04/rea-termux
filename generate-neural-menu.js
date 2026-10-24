@@ -19,9 +19,11 @@ nodes.push({
   id: 'REA_ROOT',
   name: 'REA 6.7.0 CORE',
   category: 'ROOT',
+  isCluster: true,
   val: 28,
   color: '#ffffff',
-  desc: 'Reverse Engineer Anything - Unified Neural Matrix'
+  desc: 'Reverse Engineer Anything - Unified Neural Matrix',
+  cmd: 'rea --help'
 });
 
 // Nodos Clusters
@@ -30,9 +32,11 @@ clusters.forEach(c => {
     id: c.id,
     name: c.label,
     category: 'CLUSTER',
+    isCluster: true,
     val: 18,
     color: c.color,
-    desc: `Neural Cluster for ${c.label}`
+    desc: `Agrupación neuronal: ${c.label}. Selecciona una de sus neuronas hijas para ejecutar un comando específico.`,
+    cmd: `rea --help`
   });
   links.push({
     source: 'REA_ROOT',
@@ -41,7 +45,7 @@ clusters.forEach(c => {
   });
 });
 
-// Nodos Comandos
+// Nodos Comandos (Neuronas operativas)
 commands.forEach(cmd => {
   let matchedCluster = clusters.find(c => c.match.test(cmd.name));
   if (!matchedCluster) {
@@ -51,6 +55,7 @@ commands.forEach(cmd => {
     id: cmd.name,
     name: cmd.name,
     category: matchedCluster.id,
+    isCluster: false,
     val: 8,
     color: matchedCluster.color,
     desc: cmd.desc,
@@ -65,4 +70,4 @@ commands.forEach(cmd => {
 
 const graphData = { nodes, links };
 fs.writeFileSync('/data/data/com.termux/files/home/Projects/rea-termux/graph-data.json', JSON.stringify(graphData));
-console.log('Graph data ready with', nodes.length, 'nodes and', links.length, 'links');
+console.log('Graph data regenerated with correct command mapping');
