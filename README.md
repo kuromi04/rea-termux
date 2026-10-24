@@ -97,16 +97,23 @@ Si prefieres realizar los pasos manualmente:
 
 ## 🎯 Comandos Principales
 
-Ejecuta el CLI de REA desde la carpeta del proyecto:
+Ejecuta el CLI de REA o el menú 3D desde la terminal:
 
 | Comando | Descripción |
 | :--- | :--- |
-| `node scripts/rea.mjs --help` | Muestra la lista completa de comandos y opciones |
-| `node scripts/rea.mjs doctor` | Verifica el estado de motores de análisis y dependencias |
-| `node scripts/rea.mjs analyze <target>` | Diagnóstico y resumen de una aplicación o binario |
-| `node scripts/rea.mjs analyze-web-bundle <url>` | Captura y analiza bundles web |
-| `node scripts/rea.mjs decode-android-resources <apk>` | Extrae manifiestos y recursos de APKs |
-| `node scripts/rea.mjs mcp` | Inicia REA en modo servidor stdio MCP |
+| `rea --help` / `rea --version` | Muestra la lista de comandos (optimizado con fast-path <35ms) |
+| `rea-menu` / `aegisforge-menu` | Inicia la matriz galáctica Obsidian 3D interactiva en navegador (`http://localhost:8888`) |
+| `rea doctor` | Verifica el estado de motores de análisis y dependencias |
+| `rea analyze <target>` | Diagnóstico y resumen de una aplicación o binario |
+| `rea capture-adb-screen` | Captura pantalla de dispositivo Android conectado con auto-detección ADB |
+| `rea mcp` | Inicia REA en modo servidor stdio MCP para agentes IA |
+
+---
+
+## 🛡️ Ecosistema AegisForge
+
+Para una suite de ingeniería inversa completa que además incluya **Radare2 (desensamblado nativo C/ASM)** y **JADX (decompilación de APKs a Java)** sobre el protocolo MCP, consulta el proyecto hermano:
+👉 **[AegisForge (kuromi04/AegisForge)](https://github.com/kuromi04/AegisForge)**
 
 ---
 
