@@ -77,12 +77,12 @@
       left: 50%;
       transform: translateX(-50%);
       width: calc(100% - 32px);
-      max-width: 600px;
-      background: rgba(10, 15, 30, 0.9);
+      max-width: 640px;
+      background: rgba(10, 15, 30, 0.95);
       border: 1px solid rgba(0, 243, 255, 0.5);
       border-radius: 12px;
       padding: 16px 20px;
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 243, 255, 0.2);
       z-index: 20;
       transition: all 0.3s ease;
@@ -114,40 +114,65 @@
       line-height: 1.4;
       margin-bottom: 12px;
     }
-    .cmd-box {
-      background: #000000;
+
+    /* Command editor box */
+    .cmd-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .cmd-input-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .cmd-input {
+      flex: 1;
+      background: #020617;
       border: 1px solid #1e293b;
       border-radius: 6px;
-      padding: 10px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 10px 12px;
       font-family: monospace;
       font-size: 13px;
       color: #38bdf8;
+      outline: none;
     }
-    .btn-copy {
-      background: linear-gradient(135deg, #0284c7, #0369a1);
+    .cmd-input:focus {
+      border-color: #00f3ff;
+      box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+    }
+    .btn-action {
       border: none;
       color: #fff;
       border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 11px;
+      padding: 9px 14px;
+      font-size: 12px;
       cursor: pointer;
       font-weight: 600;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      white-space: nowrap;
     }
+    .btn-copy { background: linear-gradient(135deg, #0284c7, #0369a1); }
     .btn-copy:hover { background: #0ea5e9; }
-    .btn-exec {
-      background: linear-gradient(135deg, #059669, #047857);
-      border: none;
-      color: #fff;
+    .btn-help { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+    .btn-help:hover { background: #818cf8; }
+    .btn-exec { background: linear-gradient(135deg, #059669, #047857); }
+    .btn-exec:hover { background: #10b981; }
+
+    /* Output Console */
+    .terminal-output {
+      margin-top: 10px;
+      background: #000000;
+      border: 1px solid #1e293b;
       border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 11px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-left: 6px;
+      padding: 10px 12px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #4ade80;
+      max-height: 160px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      display: none;
     }
 
     /* Legend */
@@ -174,6 +199,8 @@
       .search-box input { width: 140px; }
       .search-box input:focus { width: 180px; }
       .legend { display: none; }
+      .cmd-input-group { flex-wrap: wrap; }
+      .cmd-input { width: 100%; flex: auto; }
     }
   </style>
   <script src="https://unpkg.com/three"></script>
@@ -207,12 +234,15 @@
       <span class="panel-tag" id="panel-tag" style="background:#00f3ff; color:#000;">CORE</span>
     </div>
     <div class="panel-desc" id="panel-desc">Get an overview of an app</div>
-    <div class="cmd-box">
-      <span id="cmd-text">rea analyze</span>
-      <div>
-        <button class="btn-copy" onclick="copyCommand()">Copiar</button>
-        <button class="btn-exec" onclick="triggerExecution()">Ejecutar</button>
+    
+    <div class="cmd-container">
+      <div class="cmd-input-group">
+        <input type="text" class="cmd-input" id="cmd-input" value="rea analyze" placeholder="Escribe el comando o argumentos...">
+        <button class="btn-action btn-copy" onclick="copyCommand()">Copiar</button>
+        <button class="btn-action btn-help" onclick="triggerHelp()">--help</button>
+        <button class="btn-action btn-exec" id="exec-btn" onclick="triggerExecution()">Ejecutar</button>
       </div>
+      <div class="terminal-output" id="term-output"></div>
     </div>
   </div>
 
@@ -281,14 +311,18 @@
       const title = document.getElementById('panel-title');
       const tag = document.getElementById('panel-tag');
       const desc = document.getElementById('panel-desc');
-      const cmdText = document.getElementById('cmd-text');
+      const cmdInput = document.getElementById('cmd-input');
+      const termOutput = document.getElementById('term-output');
+
+      termOutput.style.display = 'none';
+      termOutput.innerText = '';
 
       panel.style.display = 'block';
       title.innerText = node.name;
       tag.innerText = node.category || 'NODE';
       tag.style.backgroundColor = node.color || '#00f3ff';
       desc.innerText = node.desc || 'Sin descripción';
-      cmdText.innerText = node.cmd || `rea ${node.id}`;
+      cmdInput.value = node.cmd || (node.category === 'ROOT' ? 'rea --help' : `rea ${node.id}`);
 
       // Enfocar cámara en el nodo
       const distance = 140;
@@ -301,7 +335,7 @@
     }
 
     function copyCommand() {
-      const text = document.getElementById('cmd-text').innerText;
+      const text = document.getElementById('cmd-input').value;
       navigator.clipboard.writeText(text).then(() => {
         const btn = document.querySelector('.btn-copy');
         btn.innerText = '¡Copiado!';
@@ -309,15 +343,34 @@
       });
     }
 
+    function triggerHelp() {
+      const cmdInput = document.getElementById('cmd-input');
+      const baseCmd = cmdInput.value.split(' ')[0] + ' ' + (cmdInput.value.split(' ')[1] || '');
+      cmdInput.value = baseCmd.trim() + ' --help';
+      triggerExecution();
+    }
+
     function triggerExecution() {
-      const text = document.getElementById('cmd-text').innerText;
+      const text = document.getElementById('cmd-input').value.trim();
+      const outputElem = document.getElementById('term-output');
+      const execBtn = document.getElementById('exec-btn');
+
+      outputElem.style.display = 'block';
+      outputElem.innerText = `⏳ Ejecutando en Termux: ${text}...`;
+      execBtn.disabled = true;
+      execBtn.innerText = 'Corriendo...';
+
       fetch(`/run?cmd=${encodeURIComponent(text)}`)
         .then(r => r.json())
         .then(d => {
-          alert('Resultado Termux:\n' + (d.output || 'Ejecutado con éxito'));
+          outputElem.innerText = d.output || 'Ejecutado sin salida.';
         })
-        .catch(() => {
-          alert('Comando copiado para tu terminal: ' + text);
+        .catch(err => {
+          outputElem.innerText = '❌ Error de comunicación con el servidor Termux: ' + err.message;
+        })
+        .finally(() => {
+          execBtn.disabled = false;
+          execBtn.innerText = 'Ejecutar';
         });
     }
   </script>

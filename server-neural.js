@@ -10,16 +10,24 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
 
   if (parsedUrl.pathname === '/run') {
-    const cmd = parsedUrl.searchParams.get('cmd');
-    if (!cmd || !cmd.startsWith('rea')) {
+    let cmd = parsedUrl.searchParams.get('cmd');
+    if (!cmd || !cmd.trim().startsWith('rea')) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Comando no permitido o inválido' }));
+      return res.end(JSON.stringify({ error: 'Solo se permiten comandos que comiencen con rea' }));
     }
-    // Ejecutar con límite de tiempo
-    exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
+
+    cmd = cmd.trim();
+
+    // Entorno de ejecución con PATH de Termux
+    const env = Object.assign({}, process.env, {
+      PATH: `/data/data/com.termux/files/usr/bin:${process.env.PATH || ''}`
+    });
+
+    exec(cmd, { env, timeout: 25000, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
+      const output = (stdout || '') + (stderr ? ('\n' + stderr) : '');
       res.end(JSON.stringify({
-        output: stdout || stderr || (err ? err.message : 'Ejecutado sin salida')
+        output: output.trim() || (err ? `Error (${err.code}): ${err.message}` : 'Comando ejecutado exitosamente.')
       }));
     });
     return;
