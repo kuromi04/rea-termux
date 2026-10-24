@@ -322,7 +322,7 @@
 
     <div class="controls-section">
       <input type="text" class="search-input" id="search-input" placeholder="Buscar comando..." autocomplete="off">
-      <button class="hud-btn active" id="btn-orbit" onclick="toggleOrbit()">
+      <button class="hud-btn" id="btn-orbit" onclick="toggleOrbit()">
         <span>🔄</span><span>Órbita</span>
       </button>
       <button class="hud-btn" onclick="resetCamera()">
@@ -366,7 +366,7 @@
   <script>
     let graphData = null;
     let Graph = null;
-    let isOrbiting = true;
+    let isOrbiting = false;
     let isInteracting = false;
     let angle = 0;
     let isTabVisible = true;
@@ -484,24 +484,38 @@
       pointLight.position.set(0, 100, 200);
       Graph.scene().add(pointLight);
 
+      // Rotación orbital suave que respeta tu distancia (radio), altura (Y) y rotación
       setInterval(() => {
         if (isOrbiting && !isInteracting && isTabVisible && Graph) {
-          Graph.cameraPosition({
-            x: 520 * Math.sin(angle),
-            z: 520 * Math.cos(angle)
-          });
-          angle += Math.PI / 1800;
+          const controls = Graph.controls();
+          if (controls) {
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.8;
+            controls.update();
+          }
         }
       }, 35);
 
-      const stopOrbitTemporarily = () => {
+      // Si el usuario arrastra, hace zoom o navega, NO resetear la posición jamás
+      window.addEventListener("wheel", () => {
+        // Al hacer zoom, si la órbita automática estaba encendida, se pausa para dejarte explorar libremente
+        if (isOrbiting) toggleOrbit();
+      }, { passive: true });
+
+      const onUserInteractStart = () => {
         isInteracting = true;
-        clearTimeout(window._interactTimer);
-        window._interactTimer = setTimeout(() => { isInteracting = false; }, 5000);
+        const controls = Graph && Graph.controls();
+        if (controls) controls.autoRotate = false;
       };
 
-      window.addEventListener('mousedown', stopOrbitTemporarily);
-      window.addEventListener('touchstart', stopOrbitTemporarily);
+      const onUserInteractEnd = () => {
+        isInteracting = false;
+      };
+
+      window.addEventListener("mousedown", onUserInteractStart);
+      window.addEventListener("mouseup", onUserInteractEnd);
+      window.addEventListener("touchstart", onUserInteractStart, { passive: true });
+      window.addEventListener("touchend", onUserInteractEnd, { passive: true });
 
       const searchInput = document.getElementById('search-input');
       searchInput.addEventListener('input', (e) => {
@@ -563,8 +577,13 @@
 
     function toggleOrbit() {
       isOrbiting = !isOrbiting;
-      const btn = document.getElementById('btn-orbit');
-      btn.classList.toggle('active', isOrbiting);
+      const btn = document.getElementById("btn-orbit");
+      if (btn) btn.classList.toggle("active", isOrbiting);
+      const controls = Graph && Graph.controls();
+      if (controls) {
+        controls.autoRotate = isOrbiting;
+        controls.autoRotateSpeed = 0.8;
+      }
     }
 
     function resetCamera() {
