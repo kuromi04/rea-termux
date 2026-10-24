@@ -203,8 +203,9 @@
       .cmd-input { width: 100%; flex: auto; }
     }
   </style>
-  <script src="https://unpkg.com/three"></script>
-  <script src="https://unpkg.com/3d-force-graph"></script>
+  <!-- Dependencias locales Offline -->
+  <script src="./assets/three.min.js"></script>
+  <script src="./assets/3d-force-graph.min.js"></script>
 </head>
 <body>
 
@@ -255,6 +256,19 @@
 
     let currentSelectedNode = null;
     let Graph = null;
+    let isTabVisible = true;
+
+    // Ahorro de batería y recursos cuando la pantalla se oculta o minimiza
+    document.addEventListener('visibilitychange', () => {
+      isTabVisible = !document.hidden;
+      if (Graph) {
+        if (!isTabVisible) {
+          Graph.pauseAnimation();
+        } else {
+          Graph.resumeAnimation();
+        }
+      }
+    });
 
     function initGraph(gData) {
       const elem = document.getElementById('3d-graph');
@@ -264,36 +278,37 @@
         .nodeLabel(node => `${node.name}`)
         .nodeVal('val')
         .nodeColor(node => node.color || '#00f3ff')
-        .nodeResolution(16)
+        .nodeResolution(12) // Optimizado para GPU móvil
         .linkColor(link => link.color || 'rgba(0, 243, 255, 0.2)')
-        .linkWidth(1.2)
-        .linkOpacity(0.35)
+        .linkWidth(1)
+        .linkOpacity(0.3)
         .linkDirectionalParticles(2)
-        .linkDirectionalParticleWidth(1.5)
-        .linkDirectionalParticleSpeed(0.005)
+        .linkDirectionalParticleWidth(1.2)
+        .linkDirectionalParticleSpeed(0.004)
+        .cooldownTime(4000) // Detiene el motor de física tras 4s para enfriar la CPU/batería
         .onNodeClick(node => {
           selectNode(node);
         });
 
-      // Auto rotación suave
+      // Auto-rotación suave adaptativa
       let angle = 0;
       let isInteracting = false;
       setInterval(() => {
-        if (!isInteracting && Graph) {
+        if (!isInteracting && isTabVisible && Graph) {
           Graph.cameraPosition({
-            x: 500 * Math.sin(angle),
-            z: 500 * Math.cos(angle)
+            x: 520 * Math.sin(angle),
+            z: 520 * Math.cos(angle)
           });
-          angle += Math.PI / 1200;
+          angle += Math.PI / 1500;
         }
-      }, 30);
+      }, 35);
 
       window.addEventListener('mousedown', () => { isInteracting = true; });
       window.addEventListener('mouseup', () => { setTimeout(() => { isInteracting = false; }, 4000); });
       window.addEventListener('touchstart', () => { isInteracting = true; });
       window.addEventListener('touchend', () => { setTimeout(() => { isInteracting = false; }, 4000); });
 
-      // Buscador
+      // Buscador predictivo
       const searchInput = document.getElementById('search-input');
       searchInput.addEventListener('input', (e) => {
         const val = e.target.value.toLowerCase().trim();
@@ -322,6 +337,7 @@
       tag.innerText = node.category || 'NODE';
       tag.style.backgroundColor = node.color || '#00f3ff';
       desc.innerText = node.desc || 'Sin descripción';
+
       if (node.isCluster) {
         cmdInput.value = "rea --help";
         cmdInput.disabled = true;
@@ -336,13 +352,13 @@
         document.querySelector(".btn-help").style.display = "inline-block";
       }
 
-      // Enfocar cámara en el nodo
+      // Enfocar cámara 3D
       const distance = 140;
       const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
       Graph.cameraPosition(
         { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
         node,
-        1500
+        1400
       );
     }
 
