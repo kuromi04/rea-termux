@@ -17,100 +17,97 @@
     }
     #3d-graph { width: 100%; height: 100%; position: absolute; top:0; left:0; }
 
-    /* HUD Header Obsidian Style */
-    .hud-header {
+    /* Barra Superior Unificada (Navbar HUD) */
+    .top-navbar {
       position: absolute;
-      top: 16px;
-      left: 16px;
-      z-index: 10;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      background: linear-gradient(180deg, rgba(5, 6, 11, 0.95) 0%, rgba(5, 6, 11, 0.75) 70%, rgba(5, 6, 11, 0) 100%);
       pointer-events: none;
+    }
+
+    .brand-section {
       display: flex;
       flex-direction: column;
       gap: 2px;
+      pointer-events: auto;
     }
-    .hud-badge {
-      display: inline-flex;
+    .brand-row {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(14, 165, 233, 0.1);
-      border: 1px solid rgba(14, 165, 233, 0.3);
-      padding: 3px 10px;
-      border-radius: 20px;
-      width: fit-content;
-      font-size: 10px;
-      color: #38bdf8;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 4px;
+      gap: 8px;
     }
     .hud-badge-dot {
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: #00f3ff;
-      box-shadow: 0 0 8px #00f3ff;
+      box-shadow: 0 0 10px #00f3ff;
       animation: pulse 2s infinite;
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.8); }
+      50% { opacity: 0.3; transform: scale(0.7); }
     }
-    .hud-title {
-      font-size: 19px;
+    .brand-title {
+      font-size: 15px;
       font-weight: 800;
       letter-spacing: 1.5px;
-      background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #f8fafc;
+      white-space: nowrap;
     }
-    .hud-subtitle {
-      font-size: 11px;
+    .brand-sub {
+      font-size: 10px;
       color: #64748b;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
+      margin-left: 15px;
     }
 
-    /* Controls Bar */
-    .top-controls {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      z-index: 10;
+    /* Controles de Acción (Búsqueda + Botones) */
+    .controls-section {
       display: flex;
-      gap: 8px;
       align-items: center;
+      gap: 8px;
+      pointer-events: auto;
     }
     .search-input {
-      background: rgba(15, 23, 42, 0.8);
+      background: rgba(15, 23, 42, 0.85);
       border: 1px solid rgba(148, 163, 184, 0.2);
       border-radius: 8px;
-      padding: 8px 14px;
+      padding: 7px 12px;
       color: #38bdf8;
       font-family: monospace;
       font-size: 12px;
       outline: none;
       backdrop-filter: blur(12px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-      width: 190px;
-      transition: all 0.25s ease;
+      width: 170px;
+      transition: all 0.2s ease;
     }
     .search-input:focus {
-      width: 250px;
+      width: 220px;
       border-color: #38bdf8;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
     }
     .hud-btn {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25);
       color: #94a3b8;
-      padding: 8px 12px;
+      padding: 7px 11px;
       border-radius: 8px;
       font-size: 12px;
       cursor: pointer;
       backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.2s;
+      white-space: nowrap;
     }
     .hud-btn:hover {
       color: #f8fafc;
@@ -123,7 +120,7 @@
       color: #38bdf8;
     }
 
-    /* Obsidian Galaxy Legend */
+    /* Leyenda Obsidian Inferior */
     .legend {
       position: absolute;
       left: 16px;
@@ -138,6 +135,7 @@
       font-size: 11px;
       backdrop-filter: blur(12px);
       box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 10;
     }
     .legend-item {
       display: flex;
@@ -155,7 +153,7 @@
       box-shadow: 0 0 6px currentColor;
     }
 
-    /* Details Panel */
+    /* Panel de Comandos Detallado */
     .node-panel {
       position: absolute;
       bottom: 24px;
@@ -169,7 +167,7 @@
       padding: 18px 22px;
       backdrop-filter: blur(16px);
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(14, 165, 233, 0.15);
-      z-index: 20;
+      z-index: 30;
       display: none;
       animation: slideUp 0.25s ease-out;
     }
@@ -252,10 +250,31 @@
       display: none;
     }
 
-    @media (max-width: 640px) {
-      .hud-title { font-size: 15px; }
-      .search-input { width: 130px; }
-      .search-input:focus { width: 170px; }
+    /* Adaptación móvil estricta (no solapamiento) */
+    @media (max-width: 768px) {
+      .top-navbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 8px 12px;
+        background: rgba(5, 6, 11, 0.92);
+        backdrop-filter: blur(12px);
+      }
+      .brand-section {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .brand-sub { margin-left: 0; }
+      .controls-section {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .search-input {
+        flex: 1;
+        width: auto;
+      }
+      .search-input:focus { width: auto; }
       .legend { display: none; }
       .cmd-input-group { flex-wrap: wrap; }
       .cmd-input { width: 100%; flex: auto; }
@@ -266,24 +285,26 @@
 </head>
 <body>
 
-  <div class="hud-header">
-    <div class="hud-badge">
-      <div class="hud-badge-dot"></div>
-      <span>Obsidian Neural Engine</span>
+  <!-- Barra Superior Unificada Anti-Solapamiento -->
+  <header class="top-navbar">
+    <div class="brand-section">
+      <div class="brand-row">
+        <div class="hud-badge-dot"></div>
+        <span class="brand-title">REA 3D MATRIX</span>
+      </div>
+      <span class="brand-sub">168 Nodos de Inteligencia Táctica</span>
     </div>
-    <div class="hud-title">REA KNOWLEDGE GRAPH 3D</div>
-    <div class="hud-subtitle">168 Nodos de Inteligencia Táctica • Auto-Estabilizados</div>
-  </div>
 
-  <div class="top-controls">
-    <input type="text" class="search-input" id="search-input" placeholder="Buscar en el vault..." autocomplete="off">
-    <button class="hud-btn active" id="btn-orbit" onclick="toggleOrbit()">
-      <span>🔄</span><span>Órbita</span>
-    </button>
-    <button class="hud-btn" onclick="resetCamera()">
-      <span>🎯</span><span>Centro</span>
-    </button>
-  </div>
+    <div class="controls-section">
+      <input type="text" class="search-input" id="search-input" placeholder="Buscar comando..." autocomplete="off">
+      <button class="hud-btn active" id="btn-orbit" onclick="toggleOrbit()">
+        <span>🔄</span><span>Órbita</span>
+      </button>
+      <button class="hud-btn" onclick="resetCamera()">
+        <span>🎯</span><span>Centro</span>
+      </button>
+    </div>
+  </header>
 
   <div class="legend">
     <div class="legend-item" onclick="focusCluster('CORE')"><div class="legend-dot" style="background:#00f3ff; color:#00f3ff;"></div><span>Core & Engine</span></div>
@@ -322,7 +343,6 @@
     let angle = 0;
     let isTabVisible = true;
 
-    // Colores Obsidian Vault
     const clusterColors = {
       CORE: '#00f3ff',
       ANDROID: '#00ff88',
@@ -340,7 +360,6 @@
         initObsidianGraph(data);
       });
 
-    // Control de energía en background
     document.addEventListener('visibilitychange', () => {
       isTabVisible = !document.hidden;
       if (Graph) {
@@ -352,7 +371,6 @@
     function initObsidianGraph(gData) {
       const elem = document.getElementById('3d-graph');
       
-      // Obsidian Node Three Object personalizado (Esferas Obsidian con Halo Glow y tipografía)
       Graph = ForceGraph3D()(elem)
         .graphData(gData)
         .backgroundColor('#05060b')
@@ -364,7 +382,6 @@
           const radius = isCluster ? (node.category === 'ROOT' ? 9 : 6) : 3.2;
           const colorHex = node.color || clusterColors[node.category] || '#38bdf8';
 
-          // Esfera principal (Material Obsidian Metálico)
           const geometry = new THREE.SphereGeometry(radius, 16, 16);
           const material = new THREE.MeshLambertMaterial({
             color: new THREE.Color(colorHex),
@@ -376,7 +393,6 @@
           const sphere = new THREE.Mesh(geometry, material);
           group.add(sphere);
 
-          // Anillo o halo para clusters grandes estilo Obsidian 3D
           if (isCluster) {
             const ringGeo = new THREE.RingGeometry(radius * 1.35, radius * 1.5, 24);
             const ringMat = new THREE.MeshBasicMaterial({
@@ -390,7 +406,6 @@
             group.add(ring);
           }
 
-          // Sprite de texto (Nombre del nodo flotante estilo Obsidian)
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           const fontSize = isCluster ? 28 : 20;
@@ -423,16 +438,14 @@
         .linkDirectionalParticles(link => link.source.id === 'REA_ROOT' ? 3 : 1)
         .linkDirectionalParticleWidth(1.2)
         .linkDirectionalParticleSpeed(0.003)
-        // ESTABILIZACIÓN RÁPIDA (Obsidian Physics Damping)
-        .warmupTicks(60) // Precalcula posiciones iniciales para que no baile al cargar
-        .cooldownTicks(90) // Estabiliza por completo y congela la física
+        .warmupTicks(60)
+        .cooldownTicks(90)
         .cooldownTime(3500)
-        .d3VelocityDecay(0.35) // Amortiguación para evitar que tiemblen las neuronas
+        .d3VelocityDecay(0.35)
         .onNodeClick(node => {
           selectNode(node);
         });
 
-      // Configuración de iluminación cálida Obsidian
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
       Graph.scene().add(ambientLight);
 
@@ -440,7 +453,6 @@
       pointLight.position.set(0, 100, 200);
       Graph.scene().add(pointLight);
 
-      // Rotación Suave en Órbita
       setInterval(() => {
         if (isOrbiting && !isInteracting && isTabVisible && Graph) {
           Graph.cameraPosition({
@@ -451,7 +463,6 @@
         }
       }, 35);
 
-      // Control de interacción táctil / mouse
       const stopOrbitTemporarily = () => {
         isInteracting = true;
         clearTimeout(window._interactTimer);
@@ -461,7 +472,6 @@
       window.addEventListener('mousedown', stopOrbitTemporarily);
       window.addEventListener('touchstart', stopOrbitTemporarily);
 
-      // Buscador predictivo
       const searchInput = document.getElementById('search-input');
       searchInput.addEventListener('input', (e) => {
         const val = e.target.value.toLowerCase().trim();
@@ -505,7 +515,6 @@
         document.querySelector(".btn-help").style.display = "inline-block";
       }
 
-      // Enfoque estricto y suave de cámara al nodo seleccionado (Obsidian zoom)
       const distance = node.isCluster ? 180 : 100;
       const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
       Graph.cameraPosition(
