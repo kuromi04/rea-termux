@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>REA 3D Neural Matrix</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #030712;
+      color: #f3f4f6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    #3d-graph { width: 100%; height: 100%; }
+
+    /* HUD Header */
+    .hud-header {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .hud-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #00f3ff, #ff007f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0,243,255,0.4);
+    }
+    .hud-subtitle {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* Search Bar */
+    .search-box {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+    }
+    .search-box input {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(0, 243, 255, 0.4);
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: #00f3ff;
+      font-family: monospace;
+      font-size: 13px;
+      outline: none;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+      width: 200px;
+      transition: all 0.3s;
+    }
+    .search-box input:focus {
+      width: 280px;
+      border-color: #00f3ff;
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+    }
+
+    /* Details Panel */
+    .node-panel {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 600px;
+      background: rgba(10, 15, 30, 0.9);
+      border: 1px solid rgba(0, 243, 255, 0.5);
+      border-radius: 12px;
+      padding: 16px 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 243, 255, 0.2);
+      z-index: 20;
+      transition: all 0.3s ease;
+      display: none;
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .panel-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .panel-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      font-family: monospace;
+    }
+    .panel-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+    .cmd-box {
+      background: #000000;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: monospace;
+      font-size: 13px;
+      color: #38bdf8;
+    }
+    .btn-copy {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: none;
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-copy:hover { background: #0ea5e9; }
+    .btn-exec {
+      background: linear-gradient(135deg, #059669, #047857);
+      border: none;
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    /* Legend */
+    .legend {
+      position: absolute;
+      left: 16px;
+      bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 11px;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    @media (max-width: 640px) {
+      .hud-title { font-size: 16px; }
+      .search-box input { width: 140px; }
+      .search-box input:focus { width: 180px; }
+      .legend { display: none; }
+    }
+  </style>
+  <script src="https://unpkg.com/three"></script>
+  <script src="https://unpkg.com/3d-force-graph"></script>
+</head>
+<body>
+
+  <div class="hud-header">
+    <div class="hud-title">⚡ REA Neural Graph 3D</div>
+    <div class="hud-subtitle">168 Herramientas de Ingeniería Inversa Activas</div>
+  </div>
+
+  <div class="search-box">
+    <input type="text" id="search-input" placeholder="Buscar comando / módulo..." autocomplete="off">
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#00f3ff"></div><span>Core & Engine</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div><span>Android & ADB</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff0055"></div><span>Native & Binary</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ffe600"></div><span>Web & JavaScript</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#b537f2"></div><span>Managed & WASM</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff8800"></div><span>Agent Environments</span></div>
+  </div>
+
+  <div id="3d-graph"></div>
+
+  <div class="node-panel" id="node-panel">
+    <div class="panel-header">
+      <span class="panel-title" id="panel-title">rea analyze</span>
+      <span class="panel-tag" id="panel-tag" style="background:#00f3ff; color:#000;">CORE</span>
+    </div>
+    <div class="panel-desc" id="panel-desc">Get an overview of an app</div>
+    <div class="cmd-box">
+      <span id="cmd-text">rea analyze</span>
+      <div>
+        <button class="btn-copy" onclick="copyCommand()">Copiar</button>
+        <button class="btn-exec" onclick="triggerExecution()">Ejecutar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    fetch('./graph-data.json')
+      .then(res => res.json())
+      .then(data => {
+        initGraph(data);
+      });
+
+    let currentSelectedNode = null;
+    let Graph = null;
+
+    function initGraph(gData) {
+      const elem = document.getElementById('3d-graph');
+      Graph = ForceGraph3D()(elem)
+        .graphData(gData)
+        .backgroundColor('#030712')
+        .nodeLabel(node => `${node.name}`)
+        .nodeVal('val')
+        .nodeColor(node => node.color || '#00f3ff')
+        .nodeResolution(16)
+        .linkColor(link => link.color || 'rgba(0, 243, 255, 0.2)')
+        .linkWidth(1.2)
+        .linkOpacity(0.35)
+        .linkDirectionalParticles(2)
+        .linkDirectionalParticleWidth(1.5)
+        .linkDirectionalParticleSpeed(0.005)
+        .onNodeClick(node => {
+          selectNode(node);
+        });
+
+      // Auto rotación suave
+      let angle = 0;
+      let isInteracting = false;
+      setInterval(() => {
+        if (!isInteracting && Graph) {
+          Graph.cameraPosition({
+            x: 500 * Math.sin(angle),
+            z: 500 * Math.cos(angle)
+          });
+          angle += Math.PI / 1200;
+        }
+      }, 30);
+
+      window.addEventListener('mousedown', () => { isInteracting = true; });
+      window.addEventListener('mouseup', () => { setTimeout(() => { isInteracting = false; }, 4000); });
+      window.addEventListener('touchstart', () => { isInteracting = true; });
+      window.addEventListener('touchend', () => { setTimeout(() => { isInteracting = false; }, 4000); });
+
+      // Buscador
+      const searchInput = document.getElementById('search-input');
+      searchInput.addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase().trim();
+        if (!val) return;
+        const found = gData.nodes.find(n => n.name.toLowerCase().includes(val) || (n.desc && n.desc.toLowerCase().includes(val)));
+        if (found) {
+          selectNode(found);
+        }
+      });
+    }
+
+    function selectNode(node) {
+      currentSelectedNode = node;
+      const panel = document.getElementById('node-panel');
+      const title = document.getElementById('panel-title');
+      const tag = document.getElementById('panel-tag');
+      const desc = document.getElementById('panel-desc');
+      const cmdText = document.getElementById('cmd-text');
+
+      panel.style.display = 'block';
+      title.innerText = node.name;
+      tag.innerText = node.category || 'NODE';
+      tag.style.backgroundColor = node.color || '#00f3ff';
+      desc.innerText = node.desc || 'Sin descripción';
+      cmdText.innerText = node.cmd || `rea ${node.id}`;
+
+      // Enfocar cámara en el nodo
+      const distance = 140;
+      const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+      Graph.cameraPosition(
+        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+        node,
+        1500
+      );
+    }
+
+    function copyCommand() {
+      const text = document.getElementById('cmd-text').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.btn-copy');
+        btn.innerText = '¡Copiado!';
+        setTimeout(() => { btn.innerText = 'Copiar'; }, 1500);
+      });
+    }
+
+    function triggerExecution() {
+      const text = document.getElementById('cmd-text').innerText;
+      fetch(`/run?cmd=${encodeURIComponent(text)}`)
+        .then(r => r.json())
+        .then(d => {
+          alert('Resultado Termux:\n' + (d.output || 'Ejecutado con éxito'));
+        })
+        .catch(() => {
+          alert('Comando copiado para tu terminal: ' + text);
+        });
+    }
+  </script>
+</body>
+</html>
