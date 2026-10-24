@@ -3,71 +3,156 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>REA 3D Neural Matrix</title>
+  <title>REA Obsidian Matrix 3D</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #030712;
-      color: #f3f4f6;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      background-color: #05060b;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", monospace;
       overflow: hidden;
       width: 100vw;
       height: 100vh;
+      user-select: none;
     }
-    #3d-graph { width: 100%; height: 100%; }
+    #3d-graph { width: 100%; height: 100%; position: absolute; top:0; left:0; }
 
-    /* HUD Header */
+    /* HUD Header Obsidian Style */
     .hud-header {
       position: absolute;
       top: 16px;
       left: 16px;
       z-index: 10;
       pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .hud-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(14, 165, 233, 0.1);
+      border: 1px solid rgba(14, 165, 233, 0.3);
+      padding: 3px 10px;
+      border-radius: 20px;
+      width: fit-content;
+      font-size: 10px;
+      color: #38bdf8;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .hud-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #00f3ff;
+      box-shadow: 0 0 8px #00f3ff;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
     }
     .hud-title {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 800;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      background: linear-gradient(90deg, #00f3ff, #ff007f);
+      letter-spacing: 1.5px;
+      background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 20px rgba(0,243,255,0.4);
     }
     .hud-subtitle {
       font-size: 11px;
-      color: #9ca3af;
-      margin-top: 4px;
-      letter-spacing: 1px;
+      color: #64748b;
+      letter-spacing: 0.5px;
     }
 
-    /* Search Bar */
-    .search-box {
+    /* Controls Bar */
+    .top-controls {
       position: absolute;
       top: 16px;
       right: 16px;
       z-index: 10;
       display: flex;
       gap: 8px;
+      align-items: center;
     }
-    .search-box input {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(0, 243, 255, 0.4);
+    .search-input {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
       border-radius: 8px;
       padding: 8px 14px;
-      color: #00f3ff;
+      color: #38bdf8;
       font-family: monospace;
-      font-size: 13px;
+      font-size: 12px;
       outline: none;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
-      width: 200px;
-      transition: all 0.3s;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      width: 190px;
+      transition: all 0.25s ease;
     }
-    .search-box input:focus {
-      width: 280px;
-      border-color: #00f3ff;
-      box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+    .search-input:focus {
+      width: 250px;
+      border-color: #38bdf8;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+    }
+    .hud-btn {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #94a3b8;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .hud-btn:hover {
+      color: #f8fafc;
+      border-color: #38bdf8;
+      background: rgba(30, 41, 59, 0.9);
+    }
+    .hud-btn.active {
+      background: rgba(14, 165, 233, 0.2);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    /* Obsidian Galaxy Legend */
+    .legend {
+      position: absolute;
+      left: 16px;
+      bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 11px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .legend-item:hover { opacity: 1; }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      box-shadow: 0 0 6px currentColor;
     }
 
     /* Details Panel */
@@ -77,16 +162,20 @@
       left: 50%;
       transform: translateX(-50%);
       width: calc(100% - 32px);
-      max-width: 640px;
-      background: rgba(10, 15, 30, 0.95);
-      border: 1px solid rgba(0, 243, 255, 0.5);
-      border-radius: 12px;
-      padding: 16px 20px;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 243, 255, 0.2);
+      max-width: 650px;
+      background: rgba(11, 15, 26, 0.95);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 14px;
+      padding: 18px 22px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(14, 165, 233, 0.15);
       z-index: 20;
-      transition: all 0.3s ease;
       display: none;
+      animation: slideUp 0.25s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 15px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
     }
     .panel-header {
       display: flex;
@@ -98,53 +187,41 @@
       font-size: 10px;
       font-weight: 700;
       padding: 2px 8px;
-      border-radius: 4px;
+      border-radius: 6px;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
     .panel-title {
       font-size: 16px;
       font-weight: bold;
-      color: #fff;
+      color: #f8fafc;
       font-family: monospace;
+      letter-spacing: 0.5px;
     }
     .panel-desc {
       font-size: 13px;
       color: #94a3b8;
       line-height: 1.4;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
-
-    /* Command editor box */
-    .cmd-container {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .cmd-input-group {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
+    .cmd-container { display: flex; flex-direction: column; gap: 8px; }
+    .cmd-input-group { display: flex; gap: 6px; align-items: center; }
     .cmd-input {
       flex: 1;
       background: #020617;
       border: 1px solid #1e293b;
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 10px 12px;
       font-family: monospace;
       font-size: 13px;
       color: #38bdf8;
       outline: none;
     }
-    .cmd-input:focus {
-      border-color: #00f3ff;
-      box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
-    }
+    .cmd-input:focus { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
     .btn-action {
       border: none;
       color: #fff;
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 9px 14px;
       font-size: 12px;
       cursor: pointer;
@@ -164,7 +241,7 @@
       margin-top: 10px;
       background: #000000;
       border: 1px solid #1e293b;
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 10px 12px;
       font-family: monospace;
       font-size: 12px;
@@ -175,56 +252,46 @@
       display: none;
     }
 
-    /* Legend */
-    .legend {
-      position: absolute;
-      left: 16px;
-      bottom: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 11px;
-      backdrop-filter: blur(6px);
-      pointer-events: none;
-    }
-    .legend-item { display: flex; align-items: center; gap: 8px; }
-    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-
     @media (max-width: 640px) {
-      .hud-title { font-size: 16px; }
-      .search-box input { width: 140px; }
-      .search-box input:focus { width: 180px; }
+      .hud-title { font-size: 15px; }
+      .search-input { width: 130px; }
+      .search-input:focus { width: 170px; }
       .legend { display: none; }
       .cmd-input-group { flex-wrap: wrap; }
       .cmd-input { width: 100%; flex: auto; }
     }
   </style>
-  <!-- Dependencias locales Offline -->
   <script src="./assets/three.min.js"></script>
   <script src="./assets/3d-force-graph.min.js"></script>
 </head>
 <body>
 
   <div class="hud-header">
-    <div class="hud-title">⚡ REA Neural Graph 3D</div>
-    <div class="hud-subtitle">168 Herramientas de Ingeniería Inversa Activas</div>
+    <div class="hud-badge">
+      <div class="hud-badge-dot"></div>
+      <span>Obsidian Neural Engine</span>
+    </div>
+    <div class="hud-title">REA KNOWLEDGE GRAPH 3D</div>
+    <div class="hud-subtitle">168 Nodos de Inteligencia Táctica • Auto-Estabilizados</div>
   </div>
 
-  <div class="search-box">
-    <input type="text" id="search-input" placeholder="Buscar comando / módulo..." autocomplete="off">
+  <div class="top-controls">
+    <input type="text" class="search-input" id="search-input" placeholder="Buscar en el vault..." autocomplete="off">
+    <button class="hud-btn active" id="btn-orbit" onclick="toggleOrbit()">
+      <span>🔄</span><span>Órbita</span>
+    </button>
+    <button class="hud-btn" onclick="resetCamera()">
+      <span>🎯</span><span>Centro</span>
+    </button>
   </div>
 
   <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:#00f3ff"></div><span>Core & Engine</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div><span>Android & ADB</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ff0055"></div><span>Native & Binary</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ffe600"></div><span>Web & JavaScript</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:#b537f2"></div><span>Managed & WASM</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ff8800"></div><span>Agent Environments</span></div>
+    <div class="legend-item" onclick="focusCluster('CORE')"><div class="legend-dot" style="background:#00f3ff; color:#00f3ff;"></div><span>Core & Engine</span></div>
+    <div class="legend-item" onclick="focusCluster('ANDROID')"><div class="legend-dot" style="background:#00ff88; color:#00ff88;"></div><span>Android & ADB</span></div>
+    <div class="legend-item" onclick="focusCluster('BINARY')"><div class="legend-dot" style="background:#ff0055; color:#ff0055;"></div><span>Native & Binary</span></div>
+    <div class="legend-item" onclick="focusCluster('WEB_JS')"><div class="legend-dot" style="background:#ffe600; color:#ffe600;"></div><span>Web & JavaScript</span></div>
+    <div class="legend-item" onclick="focusCluster('MANAGED')"><div class="legend-dot" style="background:#b537f2; color:#b537f2;"></div><span>Managed & WASM</span></div>
+    <div class="legend-item" onclick="focusCluster('ENV')"><div class="legend-dot" style="background:#ff8800; color:#ff8800;"></div><span>Agent Environments</span></div>
   </div>
 
   <div id="3d-graph"></div>
@@ -248,65 +315,151 @@
   </div>
 
   <script>
+    let graphData = null;
+    let Graph = null;
+    let isOrbiting = true;
+    let isInteracting = false;
+    let angle = 0;
+    let isTabVisible = true;
+
+    // Colores Obsidian Vault
+    const clusterColors = {
+      CORE: '#00f3ff',
+      ANDROID: '#00ff88',
+      BINARY: '#ff0055',
+      WEB_JS: '#ffe600',
+      MANAGED: '#b537f2',
+      ENV: '#ff8800',
+      ROOT: '#ffffff'
+    };
+
     fetch('./graph-data.json')
       .then(res => res.json())
       .then(data => {
-        initGraph(data);
+        graphData = data;
+        initObsidianGraph(data);
       });
 
-    let currentSelectedNode = null;
-    let Graph = null;
-    let isTabVisible = true;
-
-    // Ahorro de batería y recursos cuando la pantalla se oculta o minimiza
+    // Control de energía en background
     document.addEventListener('visibilitychange', () => {
       isTabVisible = !document.hidden;
       if (Graph) {
-        if (!isTabVisible) {
-          Graph.pauseAnimation();
-        } else {
-          Graph.resumeAnimation();
-        }
+        if (!isTabVisible) Graph.pauseAnimation();
+        else Graph.resumeAnimation();
       }
     });
 
-    function initGraph(gData) {
+    function initObsidianGraph(gData) {
       const elem = document.getElementById('3d-graph');
+      
+      // Obsidian Node Three Object personalizado (Esferas Obsidian con Halo Glow y tipografía)
       Graph = ForceGraph3D()(elem)
         .graphData(gData)
-        .backgroundColor('#030712')
-        .nodeLabel(node => `${node.name}`)
-        .nodeVal('val')
-        .nodeColor(node => node.color || '#00f3ff')
-        .nodeResolution(12) // Optimizado para GPU móvil
-        .linkColor(link => link.color || 'rgba(0, 243, 255, 0.2)')
-        .linkWidth(1)
-        .linkOpacity(0.3)
-        .linkDirectionalParticles(2)
+        .backgroundColor('#05060b')
+        .showNavInfo(false)
+        .nodeThreeObject(node => {
+          const group = new THREE.Group();
+          
+          const isCluster = node.isCluster;
+          const radius = isCluster ? (node.category === 'ROOT' ? 9 : 6) : 3.2;
+          const colorHex = node.color || clusterColors[node.category] || '#38bdf8';
+
+          // Esfera principal (Material Obsidian Metálico)
+          const geometry = new THREE.SphereGeometry(radius, 16, 16);
+          const material = new THREE.MeshLambertMaterial({
+            color: new THREE.Color(colorHex),
+            emissive: new THREE.Color(colorHex),
+            emissiveIntensity: isCluster ? 0.6 : 0.25,
+            roughness: 0.3,
+            metalness: 0.8
+          });
+          const sphere = new THREE.Mesh(geometry, material);
+          group.add(sphere);
+
+          // Anillo o halo para clusters grandes estilo Obsidian 3D
+          if (isCluster) {
+            const ringGeo = new THREE.RingGeometry(radius * 1.35, radius * 1.5, 24);
+            const ringMat = new THREE.MeshBasicMaterial({
+              color: new THREE.Color(colorHex),
+              side: THREE.DoubleSide,
+              transparent: true,
+              opacity: 0.5
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            group.add(ring);
+          }
+
+          // Sprite de texto (Nombre del nodo flotante estilo Obsidian)
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const fontSize = isCluster ? 28 : 20;
+          canvas.width = 512;
+          canvas.height = 64;
+          ctx.font = `600 ${fontSize}px "JetBrains Mono", -apple-system, sans-serif`;
+          ctx.fillStyle = isCluster ? '#ffffff' : '#cbd5e1';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(node.name, 256, 32);
+
+          const texture = new THREE.CanvasTexture(canvas);
+          texture.minFilter = THREE.LinearFilter;
+          const spriteMat = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            opacity: isCluster ? 0.95 : 0.75,
+            depthWrite: false
+          });
+          const sprite = new THREE.Sprite(spriteMat);
+          sprite.scale.set(isCluster ? 45 : 30, isCluster ? 7 : 4.5, 1);
+          sprite.position.y = radius + (isCluster ? 5 : 3.5);
+          group.add(sprite);
+
+          return group;
+        })
+        .linkColor(link => link.color || 'rgba(148, 163, 184, 0.15)')
+        .linkWidth(link => link.source.id === 'REA_ROOT' ? 1.8 : 0.8)
+        .linkOpacity(0.25)
+        .linkDirectionalParticles(link => link.source.id === 'REA_ROOT' ? 3 : 1)
         .linkDirectionalParticleWidth(1.2)
-        .linkDirectionalParticleSpeed(0.004)
-        .cooldownTime(4000) // Detiene el motor de física tras 4s para enfriar la CPU/batería
+        .linkDirectionalParticleSpeed(0.003)
+        // ESTABILIZACIÓN RÁPIDA (Obsidian Physics Damping)
+        .warmupTicks(60) // Precalcula posiciones iniciales para que no baile al cargar
+        .cooldownTicks(90) // Estabiliza por completo y congela la física
+        .cooldownTime(3500)
+        .d3VelocityDecay(0.35) // Amortiguación para evitar que tiemblen las neuronas
         .onNodeClick(node => {
           selectNode(node);
         });
 
-      // Auto-rotación suave adaptativa
-      let angle = 0;
-      let isInteracting = false;
+      // Configuración de iluminación cálida Obsidian
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      Graph.scene().add(ambientLight);
+
+      const pointLight = new THREE.PointLight(0x00f3ff, 1.5, 600);
+      pointLight.position.set(0, 100, 200);
+      Graph.scene().add(pointLight);
+
+      // Rotación Suave en Órbita
       setInterval(() => {
-        if (!isInteracting && isTabVisible && Graph) {
+        if (isOrbiting && !isInteracting && isTabVisible && Graph) {
           Graph.cameraPosition({
             x: 520 * Math.sin(angle),
             z: 520 * Math.cos(angle)
           });
-          angle += Math.PI / 1500;
+          angle += Math.PI / 1800;
         }
       }, 35);
 
-      window.addEventListener('mousedown', () => { isInteracting = true; });
-      window.addEventListener('mouseup', () => { setTimeout(() => { isInteracting = false; }, 4000); });
-      window.addEventListener('touchstart', () => { isInteracting = true; });
-      window.addEventListener('touchend', () => { setTimeout(() => { isInteracting = false; }, 4000); });
+      // Control de interacción táctil / mouse
+      const stopOrbitTemporarily = () => {
+        isInteracting = true;
+        clearTimeout(window._interactTimer);
+        window._interactTimer = setTimeout(() => { isInteracting = false; }, 5000);
+      };
+
+      window.addEventListener('mousedown', stopOrbitTemporarily);
+      window.addEventListener('touchstart', stopOrbitTemporarily);
 
       // Buscador predictivo
       const searchInput = document.getElementById('search-input');
@@ -321,7 +474,7 @@
     }
 
     function selectNode(node) {
-      currentSelectedNode = node;
+      isInteracting = true;
       const panel = document.getElementById('node-panel');
       const title = document.getElementById('panel-title');
       const tag = document.getElementById('panel-tag');
@@ -331,11 +484,11 @@
 
       termOutput.style.display = 'none';
       termOutput.innerText = '';
-
       panel.style.display = 'block';
+
       title.innerText = node.name;
       tag.innerText = node.category || 'NODE';
-      tag.style.backgroundColor = node.color || '#00f3ff';
+      tag.style.backgroundColor = node.color || clusterColors[node.category] || '#38bdf8';
       desc.innerText = node.desc || 'Sin descripción';
 
       if (node.isCluster) {
@@ -352,14 +505,32 @@
         document.querySelector(".btn-help").style.display = "inline-block";
       }
 
-      // Enfocar cámara 3D
-      const distance = 140;
+      // Enfoque estricto y suave de cámara al nodo seleccionado (Obsidian zoom)
+      const distance = node.isCluster ? 180 : 100;
       const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
       Graph.cameraPosition(
-        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+        { x: node.x * distRatio, y: node.y * distRatio + 15, z: node.z * distRatio },
         node,
-        1400
+        1200
       );
+    }
+
+    function focusCluster(clusterId) {
+      if (!graphData) return;
+      const clusterNode = graphData.nodes.find(n => n.id === clusterId);
+      if (clusterNode) selectNode(clusterNode);
+    }
+
+    function toggleOrbit() {
+      isOrbiting = !isOrbiting;
+      const btn = document.getElementById('btn-orbit');
+      btn.classList.toggle('active', isOrbiting);
+    }
+
+    function resetCamera() {
+      if (!Graph) return;
+      isInteracting = false;
+      Graph.cameraPosition({ x: 0, y: 100, z: 520 }, { x: 0, y: 0, z: 0 }, 1000);
     }
 
     function copyCommand() {
