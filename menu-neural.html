@@ -181,6 +181,31 @@
       align-items: center;
       margin-bottom: 8px;
     }
+    .panel-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-close-panel {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #94a3b8;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .btn-close-panel:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: #ef4444;
+      color: #fca5a5;
+    }
     .panel-tag {
       font-size: 10px;
       font-weight: 700;
@@ -319,8 +344,11 @@
 
   <div class="node-panel" id="node-panel">
     <div class="panel-header">
-      <span class="panel-title" id="panel-title">rea analyze</span>
-      <span class="panel-tag" id="panel-tag" style="background:#00f3ff; color:#000;">CORE</span>
+      <div class="panel-header-left">
+        <span class="panel-title" id="panel-title">rea analyze</span>
+        <span class="panel-tag" id="panel-tag" style="background:#00f3ff; color:#000;">CORE</span>
+      </div>
+      <button class="btn-close-panel" onclick="closePanel()" title="Cerrar widget">✕</button>
     </div>
     <div class="panel-desc" id="panel-desc">Get an overview of an app</div>
     
@@ -444,6 +472,9 @@
         .d3VelocityDecay(0.35)
         .onNodeClick(node => {
           selectNode(node);
+        })
+        .onBackgroundClick(() => {
+          closePanel();
         });
 
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
@@ -540,6 +571,12 @@
       if (!Graph) return;
       isInteracting = false;
       Graph.cameraPosition({ x: 0, y: 100, z: 520 }, { x: 0, y: 0, z: 0 }, 1000);
+    }
+
+    function closePanel() {
+      const panel = document.getElementById("node-panel");
+      panel.style.display = "none";
+      isInteracting = false;
     }
 
     function copyCommand() {
