@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
 
     // Entorno de ejecución con PATH de Termux
     const env = Object.assign({}, process.env, {
-      PATH: `/data/data/com.termux/files/usr/bin:${process.env.PATH || ''}`
+      PATH: `/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/home/.local/bin:${process.env.PATH || ''}`
     });
 
     exec(cmd, { env, timeout: 25000, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
@@ -33,7 +33,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  let filePath = path.join(DIR, parsedUrl.pathname === '/' ? 'menu-neural.html' : parsedUrl.pathname);
+  if (parsedUrl.pathname === '/' || parsedUrl.pathname === '/graphify') {
+    let filePath = path.join(DIR, 'menu-graphify.html');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return fs.createReadStream(filePath).pipe(res);
+  }
+
+  if (parsedUrl.pathname === '/3d') {
+    let filePath = path.join(DIR, 'menu-neural.html');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return fs.createReadStream(filePath).pipe(res);
+  }
+
+  let filePath = path.join(DIR, parsedUrl.pathname);
   if (!fs.existsSync(filePath)) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     return res.end('404 Not Found');

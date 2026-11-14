@@ -171,6 +171,16 @@
       display: none;
       animation: slideUp 0.25s ease-out;
     }
+    .sheet-drag-handle {
+      width: 38px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.25);
+      margin: 0 auto 8px auto;
+      cursor: pointer;
+      display: none;
+    }
+
     @keyframes slideUp {
       from { opacity: 0; transform: translate(-50%, 15px); }
       to { opacity: 1; transform: translate(-50%, 0); }
@@ -282,7 +292,7 @@
         align-items: stretch;
         gap: 8px;
         padding: 8px 12px;
-        background: rgba(5, 6, 11, 0.92);
+        background: rgba(5, 6, 11, 0.94);
         backdrop-filter: blur(12px);
       }
       .brand-section {
@@ -290,19 +300,70 @@
         justify-content: space-between;
         align-items: center;
       }
-      .brand-sub { margin-left: 0; }
+      .brand-sub { margin-left: 0; font-size: 9px; }
       .controls-section {
         width: 100%;
-        justify-content: space-between;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
       .search-input {
         flex: 1;
         width: auto;
+        min-width: 90px;
       }
       .search-input:focus { width: auto; }
       .legend { display: none; }
       .cmd-input-group { flex-wrap: wrap; }
       .cmd-input { width: 100%; flex: auto; }
+      .sheet-drag-handle { display: block; }
+      .node-panel {
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        width: calc(100% - 16px);
+        max-width: 520px;
+        padding: 12px 14px 14px 14px;
+        max-height: 52vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 16px;
+      }
+      .panel-header {
+        margin-bottom: 6px;
+      }
+      .panel-title {
+        font-size: 14px;
+      }
+      .panel-desc {
+        font-size: 12px;
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+      .cmd-input {
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+      .btn-action {
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 11px;
+        min-height: 32px;
+      }
+      .terminal-output {
+        max-height: 130px;
+        font-size: 11px;
+        padding: 8px 10px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .hud-btn span:last-child {
+        display: none;
+      }
+      .hud-btn {
+        padding: 6px 9px;
+        min-width: 34px;
+        justify-content: center;
+      }
     }
   </style>
   <script src="./assets/three.min.js"></script>
@@ -322,6 +383,9 @@
 
     <div class="controls-section">
       <input type="text" class="search-input" id="search-input" placeholder="Buscar comando..." autocomplete="off">
+      <a href="/graphify" class="hud-btn" style="text-decoration:none;" title="Cambiar a Vista Graphify 2D">
+        <span>🌐</span><span>Graphify 2D</span>
+      </a>
       <button class="hud-btn" id="btn-orbit" onclick="toggleOrbit()">
         <span>🔄</span><span>Órbita</span>
       </button>
@@ -343,6 +407,7 @@
   <div id="3d-graph"></div>
 
   <div class="node-panel" id="node-panel">
+    <div class="sheet-drag-handle" onclick="closePanel()"></div>
     <div class="panel-header">
       <div class="panel-header-left">
         <span class="panel-title" id="panel-title">rea analyze</span>
@@ -562,11 +627,23 @@
 
       const distance = node.isCluster ? 180 : 100;
       const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
-      Graph.cameraPosition(
-        { x: node.x * distRatio, y: node.y * distRatio + 15, z: node.z * distRatio },
-        node,
-        1200
-      );
+
+      if (window.innerWidth <= 768) {
+        // En móviles, el panel inferior ocupa hasta 52vh.
+        // Desplazamos el punto de mira (lookAt) hacia abajo en Y para que el nodo quede centrado en el tercio superior visible.
+        const yOffset = distance * 0.45;
+        Graph.cameraPosition(
+          { x: node.x * distRatio, y: (node.y + 12) * distRatio, z: node.z * distRatio },
+          { x: node.x, y: node.y - yOffset, z: node.z },
+          1200
+        );
+      } else {
+        Graph.cameraPosition(
+          { x: node.x * distRatio, y: node.y * distRatio + 15, z: node.z * distRatio },
+          node,
+          1200
+        );
+      }
     }
 
     function focusCluster(clusterId) {
@@ -621,6 +698,7 @@
 
       outputElem.style.display = 'block';
       outputElem.innerText = `⏳ Ejecutando en Termux: ${text}...`;
+      outputElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       execBtn.disabled = true;
       execBtn.innerText = 'Corriendo...';
 
@@ -628,9 +706,11 @@
         .then(r => r.json())
         .then(d => {
           outputElem.innerText = d.output || 'Ejecutado sin salida.';
+          outputElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         })
         .catch(err => {
           outputElem.innerText = '❌ Error de comunicación con el servidor Termux: ' + err.message;
+          outputElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         })
         .finally(() => {
           execBtn.disabled = false;

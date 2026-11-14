@@ -40,7 +40,11 @@ if [ "$1" == "capture-adb-screen" ] && [ -z "$2" ]; then
     fi
 fi
 
-exec node /data/data/com.termux/files/home/Projects/AI-Haklab-Repo/rea/scripts/rea.mjs "$@"
+REA_SCRIPT="/data/data/com.termux/files/home/proyects/rea-termux/rea/scripts/rea.mjs"
+if [ ! -f "$REA_SCRIPT" ]; then
+    REA_SCRIPT="/data/data/com.termux/files/home/Projects/rea-termux/rea/scripts/rea.mjs"
+fi
+exec node "$REA_SCRIPT" "$@"
 RUNNER
 chmod +x $PREFIX/bin/rea
 

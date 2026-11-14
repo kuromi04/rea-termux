@@ -1,0 +1,5 @@
+rea/
+server.log
+node_modules/
+.cache/
+.DS_Store

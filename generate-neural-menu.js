@@ -1,5 +1,9 @@
 const fs = require('fs');
-const commands = JSON.parse(fs.readFileSync('/data/data/com.termux/files/home/Projects/rea-termux/rea-commands.json', 'utf8'));
+const path = require('path');
+const commandsFile = fs.existsSync(path.join(__dirname, 'rea-commands.json'))
+  ? path.join(__dirname, 'rea-commands.json')
+  : '/data/data/com.termux/files/home/proyects/rea-termux/rea-commands.json';
+const commands = JSON.parse(fs.readFileSync(commandsFile, 'utf8'));
 
 // Categorización neural
 const clusters = [
@@ -69,5 +73,6 @@ commands.forEach(cmd => {
 });
 
 const graphData = { nodes, links };
-fs.writeFileSync('/data/data/com.termux/files/home/Projects/rea-termux/graph-data.json', JSON.stringify(graphData));
+const outFile = path.join(__dirname, 'graph-data.json');
+fs.writeFileSync(outFile, JSON.stringify(graphData));
 console.log('Graph data regenerated with correct command mapping');

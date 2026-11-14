@@ -102,7 +102,7 @@ Ejecuta el CLI de REA o el menú 3D desde la terminal:
 | Comando | Descripción |
 | :--- | :--- |
 | `rea --help` / `rea --version` | Muestra la lista de comandos (optimizado con fast-path <35ms) |
-| `rea-menu` / `aegisforge-menu` | Inicia la matriz galáctica Obsidian 3D interactiva en navegador (`http://localhost:8888`) |
+| `rea-menu` / `aegisforge-menu` | Inicia el visualizador web interactivo en `http://localhost:8888` (Graphify 2D Knowledge Graph en `/` y Obsidian 3D Matrix en `/3d`) |
 | `rea doctor` | Verifica el estado de motores de análisis y dependencias |
 | `rea analyze <target>` | Diagnóstico y resumen de una aplicación o binario |
 | `rea capture-adb-screen` | Captura pantalla de dispositivo Android conectado con auto-detección ADB |
