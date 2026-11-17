@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>REA x Graphify - Visualizador de Grafo de Conocimiento</title>
+  <title>REA x Graphify - Visualizador de Conocimiento & Terminal Termux</title>
   <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
   <style>
     :root {
@@ -23,6 +23,11 @@
       --node-label: #ffffff;
       --neighbor-border: #334155;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --warning: #f59e0b;
+      --success: #10b981;
+      --termux-green: #22c55e;
     }
 
     [data-theme="light"] {
@@ -41,18 +46,26 @@
       --terminal-bg: #0f172a;
       --node-label: #0f172a;
       --neighbor-border: #cbd5e1;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --warning: #d97706;
+      --success: #059669;
+      --termux-green: #15803d;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      min-height: -webkit-fill-available;
       overflow: hidden;
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", monospace;
       overscroll-behavior: none;
       -webkit-tap-highlight-color: transparent;
+      position: fixed;
     }
 
     body {
@@ -60,34 +73,40 @@
       flex-direction: column;
     }
 
-    /* Top Navigation HUD */
+    /* Top Navigation HUD - Siempre visible y adaptativo */
     #top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: var(--panel);
       border-bottom: 1px solid var(--border);
-      padding: 0 12px;
-      height: 50px;
-      min-height: 50px;
-      z-index: 20;
+      padding: 0 10px;
+      height: 48px;
+      min-height: 48px;
+      max-height: 48px;
+      flex-shrink: 0;
+      z-index: 50;
+      position: relative;
+      width: 100%;
+      overflow: hidden;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       text-decoration: none;
       color: inherit;
       user-select: none;
+      flex-shrink: 0;
     }
 
     .brand-dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: #00f3ff;
-      box-shadow: 0 0 10px #00f3ff;
+      box-shadow: 0 0 8px #00f3ff;
       animation: pulse 2s infinite;
       flex-shrink: 0;
     }
@@ -97,12 +116,11 @@
     }
 
     .brand-title {
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       white-space: nowrap;
     }
-
     .brand-title span {
       color: var(--accent);
     }
@@ -110,7 +128,8 @@
     .top-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
+      flex-shrink: 0;
     }
 
     .btn {
@@ -128,8 +147,10 @@
       gap: 5px;
       transition: all 0.15s ease;
       text-decoration: none;
-      min-height: 34px;
+      min-height: 32px;
+      height: 32px;
       white-space: nowrap;
+      user-select: none;
     }
 
     .btn:hover, .btn:active {
@@ -142,33 +163,65 @@
       color: #fff;
       border-color: #0284c7;
     }
-
     .btn-primary:hover, .btn-primary:active {
       background: #0369a1;
     }
 
+    .btn-termux {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--termux-green);
+      border-color: rgba(34, 197, 94, 0.35);
+      font-weight: 600;
+    }
+    .btn-termux:hover, .btn-termux:active {
+      background: var(--termux-green);
+      color: #000;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+    .btn-danger:hover, .btn-danger:active {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .btn-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+    .btn-warning:hover, .btn-warning:active {
+      background: #f59e0b;
+      color: #fff;
+    }
+
     /* Main Container */
     #main-container {
-      display: flex;
       flex: 1;
-      height: calc(100vh - 50px);
+      display: flex;
       position: relative;
       overflow: hidden;
+      height: calc(100% - 48px);
     }
 
     #graph {
       flex: 1;
       height: 100%;
-      width: 100%;
       background: var(--bg);
-      position: relative;
+      cursor: grab;
+    }
+    #graph:active {
+      cursor: grabbing;
     }
 
-    /* Floating Touch Controls on Canvas (Bottom Left) */
+    /* Floating Touch Controls on Canvas */
     .canvas-hud-controls {
       position: absolute;
-      bottom: calc(16px + var(--safe-bottom));
-      left: 16px;
+      left: 14px;
+      bottom: calc(14px + var(--safe-bottom));
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -176,41 +229,39 @@
     }
 
     .hud-circle-btn {
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: var(--panel);
-      color: var(--text);
       border: 1px solid var(--border);
+      color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-      transition: transform 0.15s, background 0.15s;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: transform 0.1s, background 0.15s;
     }
-
     .hud-circle-btn:active {
       transform: scale(0.92);
       background: var(--border);
     }
 
-    /* Mobile Backdrop Overlay */
+    /* Drawer Backdrop */
     #drawer-backdrop {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(3px);
-      z-index: 25;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 60;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.25s ease;
     }
-
     #drawer-backdrop.active {
       opacity: 1;
       pointer-events: auto;
@@ -218,15 +269,15 @@
 
     /* Sidebar / Drawer */
     #sidebar {
-      width: 360px;
-      max-width: 88vw;
+      width: 440px;
+      max-width: 94vw;
       background: var(--panel);
       border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       height: 100%;
       overflow: hidden;
-      z-index: 30;
+      z-index: 70;
       transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -238,7 +289,6 @@
       border-bottom: 1px solid var(--border);
       background: var(--panel-header);
     }
-
     .sidebar-header-mobile span {
       font-size: 13px;
       font-weight: 700;
@@ -274,13 +324,12 @@
       outline: none;
       transition: border-color 0.2s;
     }
-
     #search:focus {
       border-color: var(--accent);
     }
 
     #search-results {
-      max-height: 160px;
+      max-height: 180px;
       overflow-y: auto;
       padding: 4px 8px;
       border-bottom: 1px solid var(--border);
@@ -300,11 +349,9 @@
       justify-content: space-between;
       align-items: center;
     }
-
     .search-item:hover, .search-item:active {
       background: var(--border);
     }
-
     .search-item .cat-badge {
       font-size: 10px;
       padding: 2px 5px;
@@ -342,209 +389,266 @@
       align-items: center;
     }
 
-    #info-content .title-row {
+    /* Tab navigation inside cards */
+    .card-tabs {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
-      flex-wrap: wrap;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+      padding-bottom: 4px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
-
-    #node-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text);
-      word-break: break-all;
-    }
-
-    #node-cluster-badge {
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 700;
-      color: #000;
-      background: var(--accent);
-    }
-
-    #node-desc {
-      font-size: 12px;
-      color: var(--text-2);
-      line-height: 1.5;
-      margin-top: 4px;
-    }
-
-    /* Neighbors Header & List */
-    .neighbors-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
-    }
-
-    .neighbors-label {
+    .card-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
       font-size: 11px;
-      font-weight: 700;
-      color: var(--text-2);
-      letter-spacing: 0.05em;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      font-weight: 600;
+      padding: 5px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .card-tab-btn.active {
+      background: var(--border);
+      color: var(--accent);
     }
 
-    .neighbors-badge {
-      font-size: 10px;
+    .card-tab-content {
+      display: none;
+    }
+    .card-tab-content.active {
+      display: block;
+    }
+
+    /* Educational Section Blocks */
+    .edu-section {
+      margin-bottom: 10px;
+    }
+    .edu-title {
+      font-size: 11px;
       font-weight: 700;
       color: var(--accent);
-      background: rgba(56, 189, 248, 0.12);
-      padding: 2px 7px;
-      border-radius: 10px;
-      border: 1px solid rgba(56, 189, 248, 0.25);
-    }
-
-    .neighbor-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 6px;
-      max-height: 180px;
-      overflow-y: auto;
-      padding-right: 2px;
-      scrollbar-width: thin;
-    }
-
-    .neighbor-card {
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
       display: flex;
       align-items: center;
-      gap: 7px;
-      padding: 7px 9px;
-      border-radius: 8px;
+      gap: 5px;
+    }
+    .edu-text {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-3);
+    }
+
+    .workflow-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 5px;
+    }
+    .workflow-step {
+      font-size: 11.5px;
+      line-height: 1.45;
       background: var(--bg);
       border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.18s ease;
-      text-decoration: none;
-      user-select: none;
-      min-height: 32px;
-    }
-
-    .neighbor-card:hover, .neighbor-card:active {
-      background: var(--panel-header);
-      border-color: var(--accent);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-    }
-
-    .neighbor-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      box-shadow: 0 0 5px currentColor;
-    }
-
-    .neighbor-name {
-      font-size: 11px;
-      font-family: monospace;
+      padding: 6px 8px;
+      border-radius: 6px;
       color: var(--text);
+    }
+
+    .tools-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 5px;
+    }
+    .tool-tag {
+      font-size: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
+    /* Key Commands List in Cluster */
+    .key-cmds-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .key-cmd-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .key-cmd-item:hover, .key-cmd-item:active {
+      border-color: var(--accent);
+    }
+    .key-cmd-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+    .key-cmd-name {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--accent);
+    }
+    .key-cmd-desc {
+      font-size: 11px;
+      color: var(--text-2);
+      line-height: 1.4;
+    }
+
+    /* Termux Shell Prompt Bar & Toolbar */
+    .termux-prompt-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .prompt-text {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 11px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      flex: 1;
+    }
+    .p-user { color: var(--termux-green); font-weight: 700; }
+    .p-path { color: var(--accent); font-weight: 600; }
+    .term-tools {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .btn-tiny {
+      padding: 3px 6px;
+      font-size: 10.5px;
+      min-height: 24px;
+      height: 24px;
+      border-radius: 4px;
     }
 
-    .neighbor-arrow {
-      font-size: 10px;
-      color: var(--muted);
-      transition: transform 0.15s ease;
+    /* Quick Command Chips */
+    .term-quick-chips {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 2px 0 6px 0;
     }
-
-    .neighbor-card:hover .neighbor-arrow {
+    .term-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      font-family: monospace;
+      font-size: 10.5px;
+      padding: 3px 7px;
+      border-radius: 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .term-chip:hover {
+      border-color: var(--accent);
       color: var(--accent);
-      transform: translateX(2px);
+      background: rgba(56, 189, 248, 0.08);
     }
 
-    /* Execution panel */
-    #cmd-box {
+    /* Terminal Runner Box */
+    .cmd-box {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      margin-top: 8px;
+      gap: 6px;
     }
-
-    #cmd-input {
+    .cmd-input {
+      width: 100%;
       background: var(--bg);
       border: 1px solid var(--input-border);
       color: var(--accent);
-      font-family: inherit;
+      font-family: "JetBrains Mono", Consolas, monospace;
       padding: 8px 10px;
       border-radius: 6px;
       font-size: 12px;
       outline: none;
-      width: 100%;
+    }
+    .cmd-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
     }
 
     .cmd-buttons {
       display: flex;
-      gap: 6px;
+      gap: 5px;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
-    #term-output {
+    pre.term-output {
       background: var(--terminal-bg);
-      color: #4ade80;
+      color: #38bdf8;
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 8px;
+      padding: 10px;
+      font-family: "JetBrains Mono", Consolas, monospace;
       font-size: 11px;
-      font-family: "JetBrains Mono", monospace;
+      line-height: 1.45;
+      max-height: 220px;
+      overflow-y: auto;
       white-space: pre-wrap;
       word-break: break-all;
-      max-height: 180px;
-      overflow-y: auto;
-      margin-top: 6px;
       display: none;
+      margin-top: 6px;
     }
 
-    /* Communities / Clusters Legend */
+    /* Communities Legend */
     .communities-grid {
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
-
     .comm-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 6px 8px;
-      border-radius: 4px;
-      cursor: pointer;
+      border-radius: 5px;
       font-size: 12px;
+      cursor: pointer;
       transition: background 0.15s;
     }
-
-    .comm-item:hover, .comm-item:active {
+    .comm-item:hover, .comm-item.active {
       background: var(--border);
     }
-
-    .comm-item.active {
-      background: var(--border);
-      font-weight: 600;
-    }
-
     .comm-left {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-
     .comm-dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
     }
-
     .comm-count {
       font-size: 11px;
       color: var(--muted);
@@ -553,222 +657,166 @@
       border-radius: 10px;
     }
 
-    /* Mobile Floating Mini-Card (Bottom Sheet) */
+    /* Mobile Floating Quick Card (Bottom Sheet) - FIXED & NO CORTE */
     #mobile-quick-card {
-      position: absolute;
-      bottom: calc(12px + var(--safe-bottom));
-      left: 50%;
-      transform: translateX(-50%) translateY(120%);
-      width: calc(100% - 16px);
-      max-width: 500px;
-      max-height: 58vh;
-      overflow-y: auto;
+      position: fixed !important;
+      left: 50% !important;
+      bottom: calc(10px + var(--safe-bottom)) !important;
+      transform: translateX(-50%) translateY(125%) !important;
+      width: calc(100% - 16px) !important;
+      max-width: 500px !important;
+      max-height: min(74vh, 74dvh) !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.15);
-      border-radius: 16px;
-      padding: 12px 14px 14px 14px;
-      z-index: 28;
+      background: var(--panel) !important;
+      border: 1px solid var(--border) !important;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.15);
+      border-radius: 16px !important;
+      padding: 12px 14px 34px 14px !important;
+      z-index: 80 !important;
       transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
       display: none;
     }
-
     #mobile-quick-card.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
+      transform: translateX(-50%) translateY(0) !important;
+      display: block !important;
     }
-
     .sheet-drag-handle {
-      width: 38px;
-      height: 4px;
-      border-radius: 2px;
+      width: 40px;
+      height: 5px;
+      border-radius: 3px;
       background: var(--input-border);
-      margin: 0 auto 8px auto;
+      margin: 0 auto 10px auto;
       cursor: pointer;
     }
 
-    .quick-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-      gap: 8px;
-    }
-
-    .quick-card-header-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .quick-card-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-family: monospace;
-    }
-
-    .quick-card-desc {
-      font-size: 12px;
-      color: var(--text-2);
-      line-height: 1.45;
-      margin-bottom: 8px;
-      word-break: break-word;
-    }
-
-    .quick-cmd-box {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    .quick-input-group {
-      width: 100%;
-    }
-
-    #quick-cmd-input {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--input-border);
-      color: var(--accent);
-      font-family: monospace;
-      padding: 8px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      outline: none;
-    }
-
-    #quick-cmd-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
-    }
-
-    .quick-btn-toolbar {
-      display: flex;
-      gap: 6px;
-      width: 100%;
-    }
-
-    .quick-btn-toolbar .btn {
-      flex: 1;
-      font-size: 11px;
-      padding: 6px 8px;
-      min-height: 32px;
-    }
-
-    .quick-terminal-output {
-      margin-top: 6px;
-      background: var(--terminal-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-family: monospace;
-      font-size: 11px;
-      color: #4ade80;
-      max-height: 140px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
+    /* Modal de Apagado y Despedida */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(5px);
       display: none;
-    }
-
-    .quick-neighbors-wrap {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px dashed var(--border);
-    }
-
-    .quick-neighbors-chips {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding: 4px 2px 6px 2px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: thin;
-    }
-
-    .quick-neighbor-chip {
-      padding: 6px 10px;
-      border-radius: 8px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-size: 11px;
-      font-family: monospace;
-      white-space: nowrap;
-      cursor: pointer;
-      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-      transition: all 0.15s ease;
-      min-height: 30px;
+      justify-content: center;
+      z-index: 120;
+      padding: 16px;
+    }
+    .modal-backdrop.show {
+      display: flex;
+    }
+    .modal-box {
+      background: var(--panel);
+      border: 1px solid var(--danger);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(239, 68, 68, 0.25);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+      text-align: center;
+      animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalPop {
+      0% { transform: scale(0.92); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .modal-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+    .modal-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .modal-desc {
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .btn-danger-action {
+      background: var(--danger);
+      color: white;
+      border: none;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-danger-action:hover {
+      background: var(--danger-hover);
     }
 
-    .quick-neighbor-chip:hover, .quick-neighbor-chip:active {
-      background: var(--panel-header);
-      border-color: var(--accent);
-      color: var(--accent);
-      transform: translateY(-1px);
+    /* Fullscreen Shutdown Completed Screen */
+    .shutdown-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #030712;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 20px;
+      text-align: center;
+    }
+    .shutdown-screen.show {
+      display: flex;
+    }
+    .shutdown-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+      border-radius: 16px;
+      padding: 28px 24px;
+      max-width: 460px;
+    }
+    .shutdown-card h2 {
+      font-size: 20px;
+      color: #38bdf8;
+      margin-bottom: 8px;
+    }
+    .shutdown-card p {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .shutdown-card code {
+      background: #030712;
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
     }
 
-    /* =========================================
-       MEDIA QUERIES - RESPONSIVIDAD COMPLETA
-       ========================================= */
+    /* Badges */
+    .badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    /* Mobile Responsive Estricto */
     @media (max-width: 768px) {
-      .brand-title .full-label {
-        display: none;
+      .btn-label, .full-label {
+        display: none !important;
       }
-      .btn-label {
-        display: none;
-      }
-      .btn {
-        padding: 6px 8px;
-      }
-
-      #sidebar {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        transform: translateX(100%);
-        box-shadow: -6px 0 25px rgba(0, 0, 0, 0.7);
-      }
-
-      #sidebar.open {
-        transform: translateX(0);
-      }
-
-      .sidebar-header-mobile {
-        display: flex;
-      }
-
-      .canvas-hud-controls {
-        top: 12px;
-        left: 12px;
-        bottom: auto;
-        gap: 6px;
-      }
-
-      .hud-circle-btn {
-        width: 34px;
-        height: 34px;
-        font-size: 14px;
-      }
-
-      #mobile-quick-card {
-        display: block;
-      }
-    }
-
-    @media (max-width: 480px) {
       #top-bar {
         padding: 0 8px;
       }
@@ -778,10 +826,43 @@
       .top-actions {
         gap: 4px;
       }
-      .btn {
-        font-size: 11px;
-        padding: 5px 6px;
+      .top-actions .btn {
+        padding: 5px 7px;
+        min-width: 32px;
         min-height: 32px;
+        height: 32px;
+        font-size: 14px;
+        border-radius: 6px;
+      }
+      #sidebar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        transform: translateX(100%);
+      }
+      #sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar-header-mobile {
+        display: flex;
+      }
+      .cmd-buttons .btn {
+        flex: 1 1 calc(50% - 6px);
+        min-height: 34px;
+        font-size: 11px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .brand-title span:last-child {
+        display: none;
+      }
+      .top-actions .btn {
+        padding: 4px 5px;
+        min-width: 29px;
+        font-size: 13px;
       }
     }
   </style>
@@ -793,14 +874,17 @@
     <a href="/" class="brand">
       <div class="brand-dot"></div>
       <div class="brand-title">
-        REA <span>Graphify</span><span class="full-label"> 2D</span>
+        REA <span>2D</span><span class="full-label"> Graphify</span>
       </div>
     </a>
 
     <div class="top-actions">
-      <a href="/3d" class="btn" title="Alternar a Vista Tridimensional">
+      <a href="/3d" class="btn" title="Alternar a Vista Tridimensional 3D">
         <span>🌌</span><span class="btn-label">3D Matrix</span>
       </a>
+      <button class="btn btn-termux" onclick="redirectToTermux()" title="Abrir la App Termux en Android">
+        <span>📲</span><span class="btn-label">Termux</span>
+      </button>
       <button class="btn" onclick="fitGraph()" title="Centrar todo el grafo">
         <span>🎯</span><span class="btn-label">Centrar</span>
       </button>
@@ -810,7 +894,10 @@
       <button class="btn" onclick="toggleTheme()" title="Modo Claro/Oscuro">
         <span>🌓</span><span class="btn-label">Tema</span>
       </button>
-      <button class="btn btn-primary" id="btn-toggle-sidebar" onclick="toggleSidebar()" title="Abrir inspector y comandos">
+      <button class="btn btn-danger" onclick="openShutdownModal()" title="Finalizar tareas y apagar servidor REA">
+        <span>🛑</span><span class="btn-label">Apagar</span>
+      </button>
+      <button class="btn btn-primary" id="btn-toggle-sidebar" onclick="toggleSidebar()" title="Abrir inspector y terminal">
         <span>☰</span><span class="btn-label">Menú</span>
       </button>
     </div>
@@ -834,64 +921,82 @@
     <!-- Mobile Interactive Command Sheet (Bottom Sheet al tocar nodo) -->
     <div id="mobile-quick-card">
       <div class="sheet-drag-handle" onclick="dismissQuickCard()"></div>
-      <div class="quick-card-top">
-        <div class="quick-card-header-left">
-          <span class="quick-card-title" id="quick-node-name">Comando</span>
-          <span class="cat-badge" id="quick-node-badge" style="display:none;">CORE</span>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden;">
+          <span style="font-size:16px; flex-shrink:0;" id="quick-node-icon">⚡</span>
+          <span style="font-weight:700; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="quick-node-name">Nodo</span>
+          <span class="badge" id="quick-node-badge" style="background:#00f3ff22; color:#00f3ff; flex-shrink:0;">CORE</span>
         </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <button class="btn" style="padding: 3px 7px; font-size: 11px; min-height: 28px;" onclick="openSidebar()" title="Abrir inspector lateral completo">
-            <span>☰</span>
-          </button>
-          <button class="btn-close-drawer" onclick="dismissQuickCard()" title="Cerrar tarjeta">✕</button>
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <button class="btn" style="padding: 2px 8px; font-size: 11px; min-height: 28px; height:28px;" onclick="openSidebar()" title="Ver inspector completo">☰ Inspector</button>
+          <button class="btn-close-drawer" onclick="dismissQuickCard()" style="font-size:16px;">✕</button>
         </div>
       </div>
 
-      <div class="quick-card-desc" id="quick-node-desc">
-        Descripción breve del nodo.
+      <!-- Pestañas Móviles -->
+      <div class="card-tabs" id="quick-tabs">
+        <button class="card-tab-btn active" onclick="switchQuickTab(this, 'qtab-info')">📘 Info & Uso</button>
+        <button class="card-tab-btn" id="qtab-btn-cmds" onclick="switchQuickTab(this, 'qtab-cmds')">🛠️ Comandos</button>
+        <button class="card-tab-btn" onclick="switchQuickTab(this, 'qtab-term')">⚡ Terminal Termux</button>
       </div>
 
-      <!-- Quick Command Runner -->
-      <div class="quick-cmd-box" id="quick-cmd-box">
-        <div class="quick-input-group">
-          <input type="text" id="quick-cmd-input" value="rea --help" placeholder="rea <comando> [argumentos...]">
-        </div>
-        <div class="quick-btn-toolbar">
-          <button class="btn btn-primary" id="quick-btn-exec" onclick="runQuickCommand()">
-            ▶ Ejecutar
-          </button>
-          <button class="btn" id="quick-btn-help" onclick="addQuickHelpFlag()">
-            ℹ --help
-          </button>
-          <button class="btn" id="quick-btn-copy" onclick="copyQuickCommand()">
-            📋 Copiar
-          </button>
-        </div>
-        <!-- Live Terminal Output in Card -->
-        <pre class="quick-terminal-output" id="quick-term-output"></pre>
+      <!-- Tab 1: Info Educativa Móvil -->
+      <div class="card-tab-content active" id="qtab-info">
+        <div id="quick-educational-content"></div>
       </div>
 
-      <!-- Connected Nodes Chips (Vecinos) -->
-      <div class="quick-neighbors-wrap" id="quick-neighbors-wrap" style="display:none;">
-        <div class="neighbors-header">
-          <span class="neighbors-label">🔗 CONEXIONES / VECINOS</span>
-          <span class="neighbors-badge" id="quick-neighbor-count">0</span>
+      <!-- Tab 2: Comandos Clave Móvil -->
+      <div class="card-tab-content" id="qtab-cmds">
+        <div id="quick-key-cmds-content"></div>
+      </div>
+
+      <!-- Tab 3: Terminal Runner Móvil -->
+      <div class="card-tab-content" id="qtab-term">
+        <!-- Prompt Bar Móvil -->
+        <div class="termux-prompt-bar">
+          <div class="prompt-text">
+            <span class="p-user">u0_a295@termux</span>:<span class="p-path prompt-cwd">~/proyects/rea-termux</span>$
+          </div>
+          <div class="term-tools">
+            <button class="btn btn-termux btn-tiny" onclick="redirectToTermux()" title="Abrir app Termux">📲 Termux</button>
+            <button class="btn btn-tiny" onclick="copyAndOpenTermux(true)" title="Copiar y abrir Termux">📋 Copiar & Ir</button>
+            <button class="btn btn-tiny" onclick="clearTermOutput(true)">🧹 Limpiar</button>
+          </div>
         </div>
-        <div class="quick-neighbors-chips" id="quick-neighbors-list"></div>
+
+        <!-- Chips de comandos rápidos -->
+        <div class="term-quick-chips">
+          <span class="term-chip" onclick="setQuickInput('rea --help')">rea --help</span>
+          <span class="term-chip" onclick="setQuickInput('rea doctor')">rea doctor</span>
+          <span class="term-chip" onclick="setQuickInput('ls -la')">ls -la</span>
+          <span class="term-chip" onclick="setQuickInput('pwd')">pwd</span>
+          <span class="term-chip" onclick="setQuickInput('adb devices')">adb devices</span>
+          <span class="term-chip" onclick="setQuickInput('git status')">git status</span>
+        </div>
+
+        <div class="cmd-box">
+          <input type="text" class="cmd-input" id="quick-cmd-input" value="rea --help" placeholder="Comando shell de Termux...">
+          <div class="cmd-buttons">
+            <button class="btn btn-primary" id="quick-btn-exec" onclick="runQuickCommand()">▶ Ejecutar</button>
+            <button class="btn" id="quick-btn-help" onclick="addQuickHelpFlag()">ℹ --help</button>
+            <button class="btn" id="quick-btn-copy" onclick="copyQuickCommand()">📋 Copiar</button>
+            <button class="btn btn-warning" id="quick-btn-cancel" onclick="killRunningTask()" style="display:none;">🛑 Cancelar</button>
+          </div>
+          <pre class="term-output" id="quick-term-output"></pre>
+        </div>
       </div>
     </div>
 
     <!-- Graphify-style Sidebar Inspector -->
     <aside id="sidebar">
-      <!-- Mobile Drawer Header -->
       <div class="sidebar-header-mobile">
-        <span>INSPECTOR GRAPHIFY</span>
+        <span>INSPECTOR REA GRAPHIFY</span>
         <button class="btn-close-drawer" onclick="closeSidebar()">✕</button>
       </div>
 
       <!-- Search Input -->
       <div id="search-wrap">
-        <input type="text" id="search" placeholder="🔍 Buscar comando o cluster (ej. adb, patch)..." autocomplete="off">
+        <input type="text" id="search" placeholder="🔍 Buscar cluster o comando (ej. adb, elf, wasm)..." autocomplete="off">
       </div>
       <div id="search-results"></div>
 
@@ -899,64 +1004,65 @@
         <!-- Selected Node Inspector -->
         <div class="card" id="info-panel">
           <h3>
-            <span>Inspector de Nodo</span>
+            <span>Inspector Educativo & Control</span>
             <span id="node-type" style="font-size: 10px; color: var(--muted)">SELECCIÓN</span>
           </h3>
           <div id="info-content">
-            <div class="title-row">
-              <span id="node-title">Selecciona un nodo</span>
-              <span id="node-cluster-badge" style="display:none">CORE</span>
-            </div>
-            <p id="node-desc">Toca cualquier nodo o cluster para examinar sus detalles, relaciones o ejecutarlo en Termux.</p>
-
-            <!-- Terminal Execution -->
-            <div id="cmd-box" style="display: none;">
-              <h4 style="font-size: 11px; color: var(--text-2); margin-top: 6px;">COMANDO EN TERMUX:</h4>
-              <input type="text" id="cmd-input" value="rea --help">
-              <div class="cmd-buttons">
-                <button class="btn btn-primary" id="btn-exec" onclick="runCommand()" style="flex:1;">
-                  ▶ Ejecutar
-                </button>
-                <button class="btn" onclick="addHelpFlag()">
-                  ℹ --help
-                </button>
-                <button class="btn" id="btn-copy" onclick="copyCommand()">
-                  📋
-                </button>
-              </div>
-              <pre id="term-output"></pre>
-            </div>
-
-            <!-- Neighbors / Relationships -->
-            <div id="neighbors-section" style="display: none; margin-top: 12px;">
-              <div class="neighbors-header">
-                <span class="neighbors-label">🔗 CONEXIONES / VECINOS</span>
-                <span class="neighbors-badge" id="neighbor-count">0</span>
-              </div>
-              <div class="neighbor-list" id="neighbor-list"></div>
-            </div>
+            <p id="node-desc" style="font-size:12px; color:var(--text-2);">Toca cualquier cluster o nodo en el mapa para explorar qué es, su uso práctico, workflow y ejecutar comandos interactivos en Termux.</p>
           </div>
         </div>
 
         <!-- Clusters & Communities Legend -->
         <div class="card">
           <h3>
-            <span>Comunidades & Clusters</span>
-            <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="resetClusterFilter()">Mostrar Todos</button>
+            <span>Clusters de Ingeniería Inversa</span>
+            <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="resetClusterFilter()">Ver Todos</button>
           </h3>
-          <div class="communities-grid" id="communities-list">
-            <!-- Dynamically populated -->
-          </div>
+          <div class="communities-grid" id="communities-list"></div>
         </div>
 
         <!-- Graph stats -->
         <div class="card" style="font-size: 11px; color: var(--muted); display: flex; justify-content: space-between;">
           <span>Nodos: <b id="stat-nodes" style="color: var(--text)">0</b></span>
           <span>Enlaces: <b id="stat-links" style="color: var(--text)">0</b></span>
-          <span>Modo: <b style="color: var(--accent)">Graphify 2D</b></span>
+          <span>Terminal: <b style="color: var(--termux-green)">Termux Bash</b></span>
         </div>
       </div>
     </aside>
+  </div>
+
+  <!-- Modal Confirmación Apagar Servidor -->
+  <div id="shutdown-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-icon">🛑</div>
+      <div class="modal-title">Finalizar REA Termux</div>
+      <p class="modal-desc">
+        ¿Deseas finalizar todas las tareas activas y apagar el servidor web?<br>
+        Los procesos en segundo plano se detendrán de forma limpia y segura.
+      </p>
+      <div class="modal-actions">
+        <button class="btn-danger-action" onclick="executeShutdown()">
+          ⚡ Sí, Finalizar Tareas y Apagar
+        </button>
+        <button class="btn" onclick="closeShutdownModal()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pantalla de Apagado Completado -->
+  <div id="shutdown-overlay" class="shutdown-screen">
+    <div class="shutdown-card">
+      <div style="font-size:42px; margin-bottom:12px;">✨</div>
+      <h2>Servidor REA Finalizado</h2>
+      <p>Todas las tareas en ejecución y procesos hijos han sido terminados limpiamente.</p>
+      <p>Ya puedes cerrar esta pestaña del navegador. Para volver a iniciar el visualizador en cualquier momento desde tu terminal Termux ejecuta:</p>
+      <p><code>rea-menu</code></p>
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="window.location.reload()">🔄 Reintentar Conexión</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -974,37 +1080,199 @@
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
 
-    // Sidebar & Drawer Control
+    // Drawer Toggles
     function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const backdrop = document.getElementById('drawer-backdrop');
-      if (sidebar.classList.contains('open')) {
-        closeSidebar();
-      } else {
-        openSidebar();
-      }
+      const sb = document.getElementById('sidebar');
+      const isOpen = sb.classList.contains('open');
+      if (isOpen) closeSidebar(); else openSidebar();
     }
-
     function openSidebar() {
       document.getElementById('sidebar').classList.add('open');
-      document.getElementById('drawer-backdrop').classList.add('active');
+      if (window.innerWidth <= 768) {
+        document.getElementById('drawer-backdrop').classList.add('active');
+        dismissQuickCard();
+      }
     }
-
     function closeSidebar() {
       document.getElementById('sidebar').classList.remove('open');
       document.getElementById('drawer-backdrop').classList.remove('active');
     }
-
     function dismissQuickCard() {
-      document.getElementById('mobile-quick-card').classList.remove('show');
+      const qc = document.getElementById('mobile-quick-card');
+      if (qc) qc.classList.remove('show');
     }
 
-    function openSidebarAndRun() {
-      openSidebar();
-      runCommand();
+    // Modal Apagado
+    function openShutdownModal() {
+      document.getElementById('shutdown-modal').classList.add('show');
+    }
+    function closeShutdownModal() {
+      document.getElementById('shutdown-modal').classList.remove('show');
+    }
+    function executeShutdown() {
+      closeShutdownModal();
+      fetch('/shutdown')
+        .then(res => res.json())
+        .catch(() => {})
+        .finally(() => {
+          document.getElementById('shutdown-overlay').classList.add('show');
+        });
     }
 
-    // Graph Variables
+    // Redirigir a Termux App
+    function redirectToTermux() {
+      fetch('/open-termux').catch(() => {});
+      window.location.href = 'intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;component=com.termux/.app.TermuxActivity;end';
+    }
+
+    function copyAndOpenTermux(isQuick = false) {
+      const input = isQuick ? document.getElementById('quick-cmd-input') : document.getElementById('cmd-input');
+      if (input && input.value) {
+        navigator.clipboard.writeText(input.value).catch(() => {});
+      }
+      redirectToTermux();
+    }
+
+    function clearTermOutput(isQuick = false) {
+      const target = isQuick ? document.getElementById('quick-term-output') : document.getElementById('term-output');
+      if (target) {
+        target.innerHTML = '';
+        target.style.display = 'none';
+      }
+    }
+
+    function formatPath(p) {
+      if (!p) return '~/proyects/rea-termux';
+      const home = '/data/data/com.termux/files/home';
+      if (p.startsWith(home)) {
+        return '~' + p.slice(home.length);
+      }
+      return p;
+    }
+
+    function setSidebarInput(cmd) {
+      const input = document.getElementById('cmd-input');
+      if (input) {
+        input.value = cmd;
+        runCommand();
+      }
+    }
+
+    function setQuickInput(cmd) {
+      const input = document.getElementById('quick-cmd-input');
+      if (input) {
+        input.value = cmd;
+        runQuickCommand();
+      }
+    }
+
+    // Convertidor ANSI a HTML con colores
+    function ansiToHtml(text) {
+      if (!text) return '';
+      let escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      const ansiMap = {
+        '1': 'font-weight:bold;',
+        '2': 'opacity:0.8;',
+        '4': 'text-decoration:underline;',
+        '30': 'color:#475569;',
+        '31': 'color:#ef4444;',
+        '32': 'color:#22c55e;',
+        '33': 'color:#eab308;',
+        '34': 'color:#38bdf8;',
+        '35': 'color:#c084fc;',
+        '36': 'color:#00f3ff;',
+        '37': 'color:#f8fafc;',
+        '90': 'color:#64748b;',
+        '91': 'color:#f87171;',
+        '92': 'color:#4ade80;',
+        '93': 'color:#fde047;',
+        '94': 'color:#60a5fa;',
+        '95': 'color:#e879f9;',
+        '96': 'color:#22d3ee;',
+        '97': 'color:#ffffff;'
+      };
+
+      escaped = escaped.replace(/(?:\x1b|\033)\[([0-9;]+)m/g, (match, p1) => {
+        const codes = (p1 || '0').split(';');
+        if (codes.includes('0') || codes.length === 0) {
+          return '</span>';
+        }
+        let style = '';
+        codes.forEach(c => {
+          if (ansiMap[c]) style += ansiMap[c];
+        });
+        return style ? `<span style="${style}">` : '';
+      });
+
+      return escaped;
+    }
+
+    // Historial de comandos
+    const cmdHistory = [];
+    let historyIdx = -1;
+
+    function pushHistory(cmd) {
+      if (!cmd) return;
+      if (cmdHistory[0] !== cmd) {
+        cmdHistory.unshift(cmd);
+      }
+      historyIdx = -1;
+    }
+
+    function setupHistoryNav(inputId, isQuick) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (isQuick) runQuickCommand(); else runCommand();
+        } else if (e.key === 'ArrowUp') {
+          if (cmdHistory.length > 0 && historyIdx + 1 < cmdHistory.length) {
+            e.preventDefault();
+            historyIdx++;
+            input.value = cmdHistory[historyIdx];
+          }
+        } else if (e.key === 'ArrowDown') {
+          if (historyIdx > 0) {
+            e.preventDefault();
+            historyIdx--;
+            input.value = cmdHistory[historyIdx];
+          } else if (historyIdx === 0) {
+            e.preventDefault();
+            historyIdx = -1;
+            input.value = '';
+          }
+        }
+      });
+    }
+
+    // Cancelar Tarea en Ejecución
+    function killRunningTask() {
+      fetch('/kill-task')
+        .then(res => res.json())
+        .then(data => {
+          const mainTerm = document.getElementById('term-output');
+          const quickTerm = document.getElementById('quick-term-output');
+          const msg = `<br><span style="color:#ef4444; font-weight:bold;">[!] ${data.message || 'Tarea cancelada exitosamente.'}</span><br>`;
+          if (mainTerm) { mainTerm.innerHTML += msg; }
+          if (quickTerm) { quickTerm.innerHTML += msg; }
+        })
+        .catch(err => {
+          console.error('Error cancelando tarea:', err);
+        })
+        .finally(() => {
+          const btnMain = document.getElementById('btn-kill-task');
+          const btnQuick = document.getElementById('quick-btn-cancel');
+          if (btnMain) btnMain.style.display = 'none';
+          if (btnQuick) btnQuick.style.display = 'none';
+        });
+    }
+
     let network = null;
     let nodesDataSet = null;
     let edgesDataSet = null;
@@ -1012,15 +1280,14 @@
     let activeClusterFilter = null;
     let physicsEnabled = true;
 
-    // Cluster Configuration
     const clusterConfig = {
-      'CORE': { label: 'Core & Engine', color: '#00f3ff' },
-      'ANDROID': { label: 'Android & ADB', color: '#00ff88' },
-      'BINARY': { label: 'Native & Binary', color: '#ff0055' },
-      'WEB_JS': { label: 'Web & JavaScript', color: '#ffe600' },
-      'MANAGED': { label: 'Managed & WASM', color: '#b537f2' },
-      'ENV': { label: 'Agent Env & Replay', color: '#ff8800' },
-      'ROOT': { label: 'REA Root', color: '#ffffff' }
+      'CORE': { label: 'Core & Engine', color: '#00f3ff', icon: '⚡' },
+      'ANDROID': { label: 'Android & ADB', color: '#00ff88', icon: '📱' },
+      'BINARY': { label: 'Native & Binary', color: '#ff0055', icon: '🧩' },
+      'WEB_JS': { label: 'Web & JavaScript', color: '#ffe600', icon: '🌐' },
+      'MANAGED': { label: 'Managed & WASM', color: '#b537f2', icon: '🔮' },
+      'ENV': { label: 'Agent Env & Replay', color: '#ff8800', icon: '📦' },
+      'ROOT': { label: 'REA Root', color: '#ffffff', icon: '🌌' }
     };
 
     // Load Data and Initialize Vis Network
@@ -1038,7 +1305,6 @@
 
       const isMobile = window.innerWidth <= 768;
 
-      // Prepare Vis.js Nodes
       const visNodes = rawGraphData.nodes.map(n => {
         const isRoot = n.id === 'REA_ROOT';
         const isCluster = n.isCluster && !isRoot;
@@ -1051,7 +1317,7 @@
         return {
           id: n.id,
           label: n.name,
-          title: `${n.name} (${n.category || 'CMD'})\n${n.desc || ''}`,
+          title: `${n.title || n.name}\n${n.desc || ''}`,
           color: {
             background: color,
             border: isRoot ? '#ffffff' : color,
@@ -1065,14 +1331,10 @@
             face: 'monospace'
           },
           borderWidth: isRoot ? 2 : 1,
-          category: n.category,
-          isCluster: n.isCluster,
-          desc: n.desc,
-          cmd: n.cmd || `rea ${n.id}`
+          raw: n
         };
       });
 
-      // Prepare Vis.js Edges
       const visEdges = rawGraphData.links.map((l, idx) => ({
         id: 'e_' + idx,
         from: l.source,
@@ -1120,11 +1382,10 @@
 
       network = new vis.Network(container, data, options);
 
-      // Event handlers
       network.on('click', function(params) {
         if (params.nodes.length > 0) {
           const selectedId = params.nodes[0];
-          selectNodeById(selectedId);
+          selectNodeById(selectedId, true);
         } else {
           dismissQuickCard();
         }
@@ -1132,6 +1393,21 @@
 
       buildCommunitiesLegend();
       setupSearch();
+      setupHistoryNav('cmd-input', false);
+      setupHistoryNav('quick-cmd-input', true);
+
+      // Cargar CWD inicial del servidor
+      fetch('/status').then(r => r.json()).then(d => {
+        if (d && d.cwd) {
+          document.querySelectorAll('.prompt-cwd').forEach(el => el.innerText = formatPath(d.cwd));
+        }
+      }).catch(() => {});
+
+      if (!isMobile) {
+        setTimeout(() => {
+          selectNodeById('REA_ROOT', false);
+        }, 400);
+      }
     }
 
     function updateGraphColors() {
@@ -1146,134 +1422,40 @@
       nodesDataSet.update(updates);
     }
 
-    function selectNodeById(nodeId) {
-      const node = nodesDataSet.get(nodeId);
-      if (!node) return;
+    function selectNodeById(nodeId, fromUserInteraction = true) {
+      const visNode = nodesDataSet.get(nodeId);
+      if (!visNode) return;
+      const node = visNode.raw || {};
 
-      const titleElem = document.getElementById('node-title');
-      const clusterBadge = document.getElementById('node-cluster-badge');
-      const typeElem = document.getElementById('node-type');
-      const descElem = document.getElementById('node-desc');
-      const cmdBox = document.getElementById('cmd-box');
-      const cmdInput = document.getElementById('cmd-input');
-      const termOutput = document.getElementById('term-output');
-      const neighborsSection = document.getElementById('neighbors-section');
-      const neighborList = document.getElementById('neighbor-list');
-      const neighborCount = document.getElementById('neighbor-count');
+      const infoContent = document.getElementById('info-content');
+      const nodeTypeElem = document.getElementById('node-type');
+      const catColor = node.color || (clusterConfig[node.category] ? clusterConfig[node.category].color : '#38bdf8');
+      const icon = node.icon || (clusterConfig[node.category] ? clusterConfig[node.category].icon : '⚡');
 
-      titleElem.innerText = node.label;
-      typeElem.innerText = node.isCluster ? 'CLUSTER / GRUPO' : 'COMANDO';
-      descElem.innerText = node.desc || 'Sin descripción adicional.';
+      nodeTypeElem.innerText = node.isCluster ? (node.id === 'REA_ROOT' ? 'CORE MATRIZ' : 'CLUSTER EDUCATIVO') : 'COMANDO TÁCTICO';
 
-      const catColor = clusterConfig[node.category] ? clusterConfig[node.category].color : '#38bdf8';
-      clusterBadge.style.display = 'inline-block';
-      clusterBadge.style.backgroundColor = catColor;
-      clusterBadge.innerText = node.category || 'CORE';
-
-      // Update mobile quick card
-      const quickName = document.getElementById('quick-node-name');
-      const quickBadge = document.getElementById('quick-node-badge');
-      const quickDesc = document.getElementById('quick-node-desc');
-      const quickInput = document.getElementById('quick-cmd-input');
-      const quickTerm = document.getElementById('quick-term-output');
-      const quickNeighborsWrap = document.getElementById('quick-neighbors-wrap');
-      const quickNeighborsList = document.getElementById('quick-neighbors-list');
-
-      if (quickName) quickName.innerText = node.label;
-      if (quickBadge) {
-        quickBadge.style.display = 'inline-block';
-        quickBadge.style.backgroundColor = `${catColor}22`;
-        quickBadge.style.color = catColor;
-        quickBadge.innerText = node.category || 'CORE';
-      }
-      if (quickDesc) quickDesc.innerText = node.desc || 'Herramienta de análisis.';
-      if (quickInput) {
-        quickInput.value = node.isCluster ? 'rea --help' : (node.cmd || `rea ${node.id}`);
-      }
-      if (quickTerm) {
-        quickTerm.style.display = 'none';
-        quickTerm.innerText = '';
-      }
-
-      // Neighbors lookup
       const connectedNodeIds = network.getConnectedNodes(nodeId);
-      neighborCount.innerText = connectedNodeIds.length;
-      neighborList.innerHTML = '';
-
-      // Populate mobile quick card neighbors chips
-      if (quickNeighborsWrap && quickNeighborsList) {
-        quickNeighborsList.innerHTML = '';
-        const quickCount = document.getElementById('quick-neighbor-count');
-        if (quickCount) quickCount.innerText = connectedNodeIds.length;
-
-        if (connectedNodeIds.length > 0) {
-          quickNeighborsWrap.style.display = 'block';
-          connectedNodeIds.slice(0, 15).forEach(nbId => {
-            const nbNode = nodesDataSet.get(nbId);
-            if (nbNode) {
-              const chip = document.createElement('div');
-              chip.className = 'quick-neighbor-chip';
-              const nodeColor = (nbNode.color && nbNode.color.background) || '#38bdf8';
-              chip.innerHTML = `<span class="neighbor-dot" style="background:${nodeColor}; color:${nodeColor};"></span><span>${nbNode.label}</span>`;
-              chip.onclick = (e) => {
-                e.stopPropagation();
-                focusAndSelectNode(nbId);
-              };
-              quickNeighborsList.appendChild(chip);
-            }
-          });
-        } else {
-          quickNeighborsWrap.style.display = 'none';
-        }
-      }
-
-      if (window.innerWidth <= 768 && !document.getElementById('sidebar').classList.contains('open')) {
-        document.getElementById('mobile-quick-card').classList.add('show');
-      }
-
-      // Populate sidebar neighbors grid
-      if (connectedNodeIds.length > 0) {
-        neighborsSection.style.display = 'block';
-        connectedNodeIds.slice(0, 20).forEach(nbId => {
-          const nbNode = nodesDataSet.get(nbId);
-          if (nbNode) {
-            const card = document.createElement('div');
-            card.className = 'neighbor-card';
-            const nodeColor = (nbNode.color && nbNode.color.background) || '#38bdf8';
-            card.innerHTML = `
-              <span class="neighbor-dot" style="background:${nodeColor}; color:${nodeColor};"></span>
-              <span class="neighbor-name" title="${nbNode.label}">${nbNode.label}</span>
-              <span class="neighbor-arrow">→</span>
-            `;
-            card.onclick = (e) => {
-              e.stopPropagation();
-              focusAndSelectNode(nbId);
-            };
-            neighborList.appendChild(card);
-          }
-        });
-      } else {
-        neighborsSection.style.display = 'none';
-      }
-
-      // Command runner
-      cmdBox.style.display = 'flex';
-      termOutput.style.display = 'none';
-      termOutput.innerText = '';
 
       if (node.isCluster) {
-        cmdInput.value = 'rea --help';
+        renderClusterCard(node, infoContent, connectedNodeIds, catColor, icon);
       } else {
-        cmdInput.value = node.cmd || `rea ${node.id}`;
+        renderCommandCard(node, infoContent, connectedNodeIds, catColor, icon);
       }
 
-      // Smooth focus camera with mobile offset so card doesn't cover node
+      renderMobileQuickCard(node, connectedNodeIds, catColor, icon);
+      setupHistoryNav('cmd-input', false);
+
+      if (window.innerWidth <= 768 && fromUserInteraction && !document.getElementById('sidebar').classList.contains('open')) {
+        const qc = document.getElementById('mobile-quick-card');
+        qc.classList.add('show');
+      }
+
       if (window.innerWidth <= 768) {
         const nodePos = network.getPosition(nodeId);
         const containerElem = document.getElementById('graph');
         const containerH = (containerElem && containerElem.clientHeight) || window.innerHeight;
         network.moveTo({
-          position: { x: nodePos.x, y: nodePos.y + (containerH * 0.18) },
+          position: { x: nodePos.x, y: nodePos.y + (containerH * 0.16) },
           scale: 1.15,
           animation: { duration: 500, easingFunction: 'easeInOutQuad' }
         });
@@ -1285,9 +1467,313 @@
       }
     }
 
+    // Renderizado Educativo para Clusters
+    function renderClusterCard(node, container, connectedIds, catColor, icon) {
+      const workflowHtml = (node.workflow || []).map(step => `<div class="workflow-step">${step}</div>`).join('');
+      const toolsHtml = (node.tools || []).map(tool => `<span class="tool-tag">${tool}</span>`).join('');
+      
+      const keyCmdsHtml = (node.keyCommands || []).map((kc) => `
+        <div class="key-cmd-item" onclick="loadCommand('${kc.cmd}')">
+          <div class="key-cmd-head">
+            <span class="key-cmd-name">${kc.name}</span>
+            <span style="font-size:10px; color:var(--muted);">Probar →</span>
+          </div>
+          <div class="key-cmd-desc">${kc.desc}</div>
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:20px;">${icon}</span>
+              <span style="font-size:16px; font-weight:700; color:${catColor};">${node.title || node.name}</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-2); margin-top:2px;">${node.subtitle || ''}</div>
+          </div>
+          <span class="badge" style="background:${catColor}22; color:${catColor}; border:1px solid ${catColor}44;">
+            ${node.difficulty || 'General'}
+          </span>
+        </div>
+
+        <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
+          <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="filterByCluster('${node.id}')">
+            🎯 Filtrar solo este Cluster
+          </button>
+          <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="resetClusterFilter()">
+            🌐 Ver Todo el Grafo
+          </button>
+        </div>
+
+        <!-- Pestañas Interactivas -->
+        <div class="card-tabs">
+          <button class="card-tab-btn active" onclick="switchCardTab(this, 'tab-info')">📘 ¿Qué es y Su Uso?</button>
+          <button class="card-tab-btn" onclick="switchCardTab(this, 'tab-cmds')">🛠️ Comandos Clave (${(node.keyCommands || []).length})</button>
+          <button class="card-tab-btn" onclick="switchCardTab(this, 'tab-term')">⚡ Terminal Termux</button>
+        </div>
+
+        <!-- Tab 1: Información Educativa & Uso -->
+        <div class="card-tab-content active" id="tab-info">
+          <div class="edu-section">
+            <div class="edu-title">💡 ¿Qué es?</div>
+            <p class="edu-text">${node.whatIs || node.desc}</p>
+          </div>
+
+          <div class="edu-section">
+            <div class="edu-title">🎯 ¿Para qué sirve y cuál es su uso?</div>
+            <p class="edu-text">${node.usage || 'Herramientas de ingeniería inversa aplicadas a este dominio.'}</p>
+          </div>
+
+          <div class="edu-section">
+            <div class="edu-title">🔄 Flujo de Trabajo Recomendado (Workflow)</div>
+            <div class="workflow-list">${workflowHtml}</div>
+          </div>
+
+          <div class="edu-section">
+            <div class="edu-title">🧰 Motores & Herramientas Integradas</div>
+            <div class="tools-tags">${toolsHtml}</div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Comandos Clave Recomendados -->
+        <div class="card-tab-content" id="tab-cmds">
+          <div style="font-size:11px; color:var(--text-2); margin-bottom:8px;">
+            Haz clic en cualquier comando para cargarlo directamente en la terminal:
+          </div>
+          <div class="key-cmds-list">
+            ${keyCmdsHtml || '<p style="font-size:11px; color:var(--muted);">No hay comandos sugeridos para este nodo.</p>'}
+          </div>
+        </div>
+
+        <!-- Tab 3: Terminal de Ejecución -->
+        <div class="card-tab-content" id="tab-term">
+          <!-- Termux Shell Prompt Bar -->
+          <div class="termux-prompt-bar">
+            <div class="prompt-text">
+              <span class="p-user">u0_a295@termux</span>:<span class="p-path prompt-cwd">~/proyects/rea-termux</span>$
+            </div>
+            <div class="term-tools">
+              <button class="btn btn-termux btn-tiny" onclick="redirectToTermux()" title="Abrir app Termux nativa">📲 Termux</button>
+              <button class="btn btn-tiny" onclick="copyAndOpenTermux(false)" title="Copiar y abrir Termux">📋 Copiar & Ir</button>
+              <button class="btn btn-tiny" onclick="clearTermOutput(false)">🧹 Limpiar</button>
+            </div>
+          </div>
+
+          <!-- Quick chips -->
+          <div class="term-quick-chips">
+            <span class="term-chip" onclick="setSidebarInput('rea --help')">rea --help</span>
+            <span class="term-chip" onclick="setSidebarInput('rea doctor')">rea doctor</span>
+            <span class="term-chip" onclick="setSidebarInput('ls -la')">ls -la</span>
+            <span class="term-chip" onclick="setSidebarInput('pwd')">pwd</span>
+            <span class="term-chip" onclick="setSidebarInput('adb devices')">adb devices</span>
+          </div>
+
+          <div class="cmd-box">
+            <input type="text" class="cmd-input" id="cmd-input" value="${node.cmd || 'rea --help'}" placeholder="Comando Termux (ej: rea, ls, python, pkg)...">
+            <div class="cmd-buttons">
+              <button class="btn btn-primary" id="btn-exec" onclick="runCommand()">▶ Ejecutar</button>
+              <button class="btn" onclick="addHelpFlag()">ℹ --help</button>
+              <button class="btn" id="btn-copy" onclick="copyCommand()">📋 Copiar</button>
+              <button class="btn btn-warning" id="btn-kill-task" onclick="killRunningTask()" style="display:none;">🛑 Cancelar</button>
+            </div>
+            <pre class="term-output" id="term-output"></pre>
+          </div>
+        </div>
+      `;
+    }
+
+    // Renderizado para Comandos Específicos
+    function renderCommandCard(node, container, connectedIds, catColor, icon) {
+      container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:18px;">${icon}</span>
+              <span style="font-size:15px; font-weight:700; color:${catColor}; font-family:monospace;">${node.name}</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-2); margin-top:2px;">Cluster: ${node.clusterTitle || node.category}</div>
+          </div>
+          <span class="badge" style="background:${catColor}22; color:${catColor}; border:1px solid ${catColor}44;">
+            ${node.category}
+          </span>
+        </div>
+
+        <div class="edu-section" style="margin-top:8px;">
+          <div class="edu-title">📖 Propósito del Comando</div>
+          <p class="edu-text">${node.desc || 'Comando de análisis táctico de REA.'}</p>
+        </div>
+
+        <div class="edu-section">
+          <div class="edu-title">💡 Sintaxis Recomendada</div>
+          <p class="edu-text" style="font-family:monospace; background:var(--bg); padding:6px 8px; border-radius:4px; border:1px solid var(--border);">
+            rea ${node.name} [argumentos...]
+          </p>
+        </div>
+
+        <!-- Terminal Shell Prompt Bar -->
+        <div class="termux-prompt-bar">
+          <div class="prompt-text">
+            <span class="p-user">u0_a295@termux</span>:<span class="p-path prompt-cwd">~/proyects/rea-termux</span>$
+          </div>
+          <div class="term-tools">
+            <button class="btn btn-termux btn-tiny" onclick="redirectToTermux()" title="Abrir app Termux nativa">📲 Termux</button>
+            <button class="btn btn-tiny" onclick="copyAndOpenTermux(false)" title="Copiar y abrir Termux">📋 Copiar & Ir</button>
+            <button class="btn btn-tiny" onclick="clearTermOutput(false)">🧹 Limpiar</button>
+          </div>
+        </div>
+
+        <!-- Terminal Runner -->
+        <div class="cmd-box">
+          <input type="text" class="cmd-input" id="cmd-input" value="rea ${node.name}" placeholder="Escribe comando Termux...">
+          <div class="cmd-buttons">
+            <button class="btn btn-primary" id="btn-exec" onclick="runCommand()">▶ Ejecutar</button>
+            <button class="btn" onclick="addHelpFlag()">ℹ --help</button>
+            <button class="btn" id="btn-copy" onclick="copyCommand()">📋 Copiar</button>
+            <button class="btn btn-warning" id="btn-kill-task" onclick="killRunningTask()" style="display:none;">🛑 Cancelar</button>
+          </div>
+          <pre class="term-output" id="term-output"></pre>
+        </div>
+
+        <!-- Conexiones / Relaciones -->
+        <div style="margin-top:12px;">
+          <div class="edu-title">🔗 Conexiones en el Grafo (${connectedIds.length})</div>
+          <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">
+            ${connectedIds.slice(0, 15).map(id => {
+              const nb = nodesDataSet.get(id);
+              const col = (nb && nb.color && nb.color.background) || '#38bdf8';
+              return `<button class="btn" style="padding:2px 7px; font-size:10px;" onclick="focusAndSelectNode('${id}')">
+                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${col};"></span>
+                ${(nb && nb.label) || id}
+              </button>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Renderizado para Mobile Quick Card con pestañas sin cortes
+    function renderMobileQuickCard(node, connectedIds, catColor, icon) {
+      const qIcon = document.getElementById('quick-node-icon');
+      const qName = document.getElementById('quick-node-name');
+      const qBadge = document.getElementById('quick-node-badge');
+      const qContent = document.getElementById('quick-educational-content');
+      const qKeyCmds = document.getElementById('quick-key-cmds-content');
+      const qCmdsBtn = document.getElementById('qtab-btn-cmds');
+      const qInput = document.getElementById('quick-cmd-input');
+      const qTerm = document.getElementById('quick-term-output');
+
+      if (qIcon) qIcon.innerText = icon;
+      if (qName) qName.innerText = node.name;
+      if (qBadge) {
+        qBadge.innerText = node.category || 'CORE';
+        qBadge.style.backgroundColor = `${catColor}22`;
+        qBadge.style.color = catColor;
+      }
+
+      if (qInput) {
+        qInput.value = node.isCluster ? 'rea --help' : (node.cmd || `rea ${node.name}`);
+      }
+      if (qTerm) {
+        qTerm.style.display = 'none';
+        qTerm.innerHTML = '';
+      }
+
+      const qtabBtns = document.querySelectorAll('#quick-tabs .card-tab-btn');
+      if (qtabBtns.length > 0) switchQuickTab(qtabBtns[0], 'qtab-info');
+
+      if (node.isCluster) {
+        if (qCmdsBtn) qCmdsBtn.style.display = 'inline-block';
+
+        const workflowSteps = (node.workflow || []).map(s => `<div class="workflow-step" style="font-size:11px;">${s}</div>`).join('');
+        const toolsChips = (node.tools || []).map(t => `<span class="tool-tag">${t}</span>`).join('');
+
+        qContent.innerHTML = `
+          <div style="font-size:12.5px; color:var(--text); font-weight:700; margin-bottom:4px;">
+            ${node.title || node.name}
+          </div>
+          <div style="font-size:11.5px; color:var(--text-3); line-height:1.45; margin-bottom:8px;">
+            <b>¿Qué es?</b> ${node.whatIs || node.desc}
+          </div>
+          <div style="font-size:11.5px; color:var(--text-3); line-height:1.45; margin-bottom:8px;">
+            <b>Uso:</b> ${node.usage || 'Herramienta de análisis.'}
+          </div>
+          <div style="margin-bottom:8px;">
+            <div style="font-size:10.5px; font-weight:700; color:var(--accent); text-transform:uppercase; margin-bottom:4px;">Flujo Guiado</div>
+            <div class="workflow-list">${workflowSteps}</div>
+          </div>
+          <div>
+            <div style="font-size:10.5px; font-weight:700; color:var(--accent); text-transform:uppercase; margin-bottom:4px;">Herramientas</div>
+            <div class="tools-tags">${toolsChips}</div>
+          </div>
+        `;
+
+        if (qKeyCmds) {
+          qKeyCmds.innerHTML = (node.keyCommands || []).map(kc => `
+            <div class="key-cmd-item" onclick="loadQuickCommand('${kc.cmd}')">
+              <div class="key-cmd-head">
+                <span class="key-cmd-name">${kc.name}</span>
+                <span style="font-size:10px; color:var(--accent);">Tocar para probar →</span>
+              </div>
+              <div class="key-cmd-desc">${kc.desc}</div>
+            </div>
+          `).join('') || '<p style="font-size:11px; color:var(--muted);">Sin comandos sugeridos.</p>';
+        }
+      } else {
+        if (qCmdsBtn) qCmdsBtn.style.display = 'none';
+
+        qContent.innerHTML = `
+          <div style="font-size:12px; color:var(--text-2); line-height:1.45; margin-bottom:8px;">
+            <b>Descripción:</b> ${node.desc || 'Comando de análisis REA.'}
+          </div>
+          <div style="font-size:11px; font-family:monospace; background:var(--bg); padding:6px 8px; border-radius:4px; border:1px solid var(--border); margin-bottom:8px;">
+            rea ${node.name} [opciones]
+          </div>
+          <div style="font-size:11px; color:var(--muted);">
+            Toca la pestaña <b>⚡ Terminal</b> para ejecutar cualquier comando Termux.
+          </div>
+        `;
+      }
+    }
+
+    function switchCardTab(btn, tabId) {
+      document.querySelectorAll('#info-panel .card-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#info-panel .card-tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+    }
+
+    function switchQuickTab(btn, tabId) {
+      document.querySelectorAll('#quick-tabs .card-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#mobile-quick-card .card-tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+    }
+
+    function loadCommand(cmd) {
+      const input = document.getElementById('cmd-input');
+      if (input) input.value = cmd;
+      const tabBtns = document.querySelectorAll('#info-panel .card-tab-btn');
+      if (tabBtns.length >= 3) {
+        switchCardTab(tabBtns[2], 'tab-term');
+      }
+      runCommand();
+    }
+
+    function loadQuickCommand(cmd) {
+      const input = document.getElementById('quick-cmd-input');
+      if (input) input.value = cmd;
+      const qtabBtns = document.querySelectorAll('#quick-tabs .card-tab-btn');
+      if (qtabBtns.length >= 3) {
+        switchQuickTab(qtabBtns[2], 'qtab-term');
+      }
+      runQuickCommand();
+    }
+
     function focusAndSelectNode(nodeId) {
       network.selectNodes([nodeId]);
-      selectNodeById(nodeId);
+      selectNodeById(nodeId, true);
     }
 
     function fitGraph() {
@@ -1320,7 +1806,7 @@
 
       const counts = {};
       nodesDataSet.get().forEach(n => {
-        counts[n.category] = (counts[n.category] || 0) + 1;
+        counts[n.raw?.category] = (counts[n.raw?.category] || 0) + 1;
       });
 
       Object.keys(clusterConfig).forEach(catKey => {
@@ -1352,13 +1838,19 @@
 
       activeClusterFilter = category;
       document.querySelectorAll('.comm-item').forEach(el => el.classList.remove('active'));
-      if (rowElem) rowElem.classList.add('active');
+      if (rowElem) {
+        rowElem.classList.add('active');
+      } else {
+        const matching = document.querySelector(`.comm-item[data-category="${category}"]`);
+        if (matching) matching.classList.add('active');
+      }
 
       const isLight = document.documentElement.getAttribute('data-theme') === 'light';
       const labelColor = isLight ? '#0f172a' : '#ffffff';
 
       const updates = nodesDataSet.get().map(n => {
-        const matches = n.category === category || n.id === 'REA_ROOT' || n.id === category;
+        const raw = n.raw || {};
+        const matches = raw.category === category || raw.id === 'REA_ROOT' || raw.id === category;
         return {
           id: n.id,
           hidden: !matches,
@@ -1401,7 +1893,12 @@
         }
 
         const matches = nodesDataSet.get({
-          filter: (n) => n.label.toLowerCase().includes(query) || (n.desc && n.desc.toLowerCase().includes(query))
+          filter: (n) => {
+            const raw = n.raw || {};
+            return n.label.toLowerCase().includes(query) ||
+                   (raw.desc && raw.desc.toLowerCase().includes(query)) ||
+                   (raw.whatIs && raw.whatIs.toLowerCase().includes(query));
+          }
         }).slice(0, 8);
 
         if (matches.length === 0) {
@@ -1415,10 +1912,10 @@
         matches.forEach(item => {
           const div = document.createElement('div');
           div.className = 'search-item';
-          const conf = clusterConfig[item.category] || { color: '#38bdf8' };
+          const conf = clusterConfig[item.raw?.category] || { color: '#38bdf8' };
           div.innerHTML = `
             <span>${item.label}</span>
-            <span class="cat-badge" style="background: ${conf.color}22; color: ${conf.color}">${item.category || 'CMD'}</span>
+            <span class="cat-badge" style="background: ${conf.color}22; color: ${conf.color}">${item.raw?.category || 'CMD'}</span>
           `;
           div.onclick = () => {
             focusAndSelectNode(item.id);
@@ -1436,26 +1933,41 @@
       const cmd = input.value.trim();
       const outputElem = document.getElementById('quick-term-output');
       const btn = document.getElementById('quick-btn-exec');
+      const cancelBtn = document.getElementById('quick-btn-cancel');
+
+      if (cmd === 'clear') {
+        clearTermOutput(true);
+        input.value = '';
+        return;
+      }
+
+      pushHistory(cmd);
 
       outputElem.style.display = 'block';
-      outputElem.innerText = `⏳ Ejecutando en Termux: ${cmd}...\n`;
+      outputElem.innerHTML = `<span style="color:#eab308;">⏳ Ejecutando en Termux Bash:</span> <span style="color:#38bdf8;">${cmd}</span>...<br>`;
       outputElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       btn.disabled = true;
-      btn.innerText = 'Ejecutando...';
+      btn.innerText = 'Corriendo...';
+      if (cancelBtn) cancelBtn.style.display = 'inline-flex';
 
       fetch(`/run?cmd=${encodeURIComponent(cmd)}`)
         .then(res => res.json())
         .then(data => {
-          outputElem.innerText = data.output || '✓ Comando completado sin salida.';
+          if (data.cwd) {
+            document.querySelectorAll('.prompt-cwd').forEach(el => el.innerText = formatPath(data.cwd));
+          }
+          const htmlOutput = ansiToHtml(data.output);
+          outputElem.innerHTML = htmlOutput || '<span style="color:#22c55e;">✓ Completado sin salida.</span>';
           outputElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         })
         .catch(err => {
-          outputElem.innerText = `❌ Error al conectar con Termux: ${err.message}`;
+          outputElem.innerHTML = `<span style="color:#ef4444;">❌ Error de conexión con Termux: ${err.message}</span>`;
           outputElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         })
         .finally(() => {
           btn.disabled = false;
           btn.innerText = '▶ Ejecutar';
+          if (cancelBtn) cancelBtn.style.display = 'none';
         });
     }
 
@@ -1489,46 +2001,68 @@
       const input = document.getElementById('cmd-input');
       navigator.clipboard.writeText(input.value).then(() => {
         const btn = document.getElementById('btn-copy');
-        btn.innerText = '✓';
-        setTimeout(() => { btn.innerText = '📋'; }, 1500);
+        btn.innerText = '✓ Copiado';
+        setTimeout(() => { btn.innerText = '📋 Copiar'; }, 1500);
       });
     }
 
     function runCommand() {
-      const cmd = document.getElementById('cmd-input').value.trim();
+      const input = document.getElementById('cmd-input');
+      const cmd = input ? input.value.trim() : 'rea --help';
       const outputElem = document.getElementById('term-output');
       const btn = document.getElementById('btn-exec');
+      const cancelBtn = document.getElementById('btn-kill-task');
+
+      if (!outputElem) return;
+
+      if (cmd === 'clear') {
+        clearTermOutput(false);
+        if (input) input.value = '';
+        return;
+      }
+
+      pushHistory(cmd);
 
       outputElem.style.display = 'block';
-      outputElem.innerText = `⏳ Ejecutando en Termux: ${cmd}...\n`;
+      outputElem.innerHTML = `<span style="color:#eab308;">⏳ Ejecutando en Termux Bash:</span> <span style="color:#38bdf8;">${cmd}</span>...<br>`;
       outputElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      btn.disabled = true;
-      btn.innerText = 'Ejecutando...';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Corriendo...';
+      }
+      if (cancelBtn) cancelBtn.style.display = 'inline-flex';
 
       fetch(`/run?cmd=${encodeURIComponent(cmd)}`)
         .then(res => res.json())
         .then(data => {
-          outputElem.innerText = data.output || '✓ Comando completado sin salida.';
+          if (data.cwd) {
+            document.querySelectorAll('.prompt-cwd').forEach(el => el.innerText = formatPath(data.cwd));
+          }
+          const htmlOutput = ansiToHtml(data.output);
+          outputElem.innerHTML = htmlOutput || '<span style="color:#22c55e;">✓ Completado sin salida.</span>';
           outputElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         })
         .catch(err => {
-          outputElem.innerText = `❌ Error al conectar con Termux: ${err.message}`;
+          outputElem.innerHTML = `<span style="color:#ef4444;">❌ Error de conexión con Termux: ${err.message}</span>`;
           outputElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         })
         .finally(() => {
-          btn.disabled = false;
-          btn.innerText = '▶ Ejecutar';
+          if (btn) {
+            btn.disabled = false;
+            btn.innerText = '▶ Ejecutar';
+          }
+          if (cancelBtn) cancelBtn.style.display = 'none';
         });
     }
 
-    // Initialize on load
     window.addEventListener('DOMContentLoaded', initGraph);
 
-    // Keyboard Shortcuts (Esc closes drawer/cards)
+    // Escape closes drawers and modals
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeSidebar();
         dismissQuickCard();
+        closeShutdownModal();
       }
     });
   </script>

@@ -102,11 +102,31 @@ Ejecuta el CLI de REA o el menú 3D desde la terminal:
 | Comando | Descripción |
 | :--- | :--- |
 | `rea --help` / `rea --version` | Muestra la lista de comandos (optimizado con fast-path <35ms) |
-| `rea-menu` / `aegisforge-menu` | Inicia el visualizador web interactivo en `http://localhost:8888` (Graphify 2D Knowledge Graph en `/` y Obsidian 3D Matrix en `/3d`) |
-| `rea doctor` | Verifica el estado de motores de análisis y dependencias |
+| `rea-menu` / `rea-menu start` | Inicia el visualizador web interactivo en `http://localhost:8888` |
+| `rea-menu stop` / `rea-menu kill` | **Finaliza todas las tareas activas y apaga limpiamente el servidor** |
+| `rea-menu status` | Muestra el estado del servidor, PID y tareas en ejecución |
+| `rea-menu restart` | Reinicia el servidor y refresca los procesos |
+| `rea-menu --open` / `-o` | Inicia el servidor y abre automáticamente el navegador en Android |
+| `rea-menu foreground` | Ejecuta en primer plano capturando `Ctrl+C` para cierre instantáneo |
+| `rea doctor` | Verifica el estado de motores de análisis y dependencias en Termux |
 | `rea analyze <target>` | Diagnóstico y resumen de una aplicación o binario |
 | `rea capture-adb-screen` | Captura pantalla de dispositivo Android conectado con auto-detección ADB |
 | `rea mcp` | Inicia REA en modo servidor stdio MCP para agentes IA |
+
+---
+
+## 🧠 Tarjetas Educativas e Interactivas de Clusters
+
+El visualizador integra una base de conocimiento pedagógica e interactiva accesible tanto en la vista **Graphify 2D** como en la **Matriz 3D**:
+
+- 💡 **¿Qué es?**: Explicación conceptual clara de cada cluster o disciplina de ingeniería inversa.
+- 🎯 **¿Para qué sirve y su uso?**: Casos prácticos de aplicación (auditoría de apps Android, desensamblado ELF, reconstrucción AST de JS/Electron, metadatos Unity IL2CPP, etc.).
+- 🔄 **Flujo de Trabajo (Workflow)**: Metodología paso a paso guiada recomendada para cada área.
+- 🧰 **Motores & Herramientas**: Integración con Ghidra, Cutter, Frida, ADB, Playwright, WABT y Babel.
+- 🛠️ **Comandos Clave Interactivos**: Lista de comandos recomendados que con un solo clic se cargan en la terminal interactiva listos para ejecutar o consultar con `--help`.
+- ⚡ **Terminal Termux Completa & Persistente**: Sin restricciones artificiales. Ejecuta cualquier comando del sistema Termux (`rea`, `ls -la`, `pwd`, `adb`, `git`, `python`, `pkg`, tuberías `|`, etc.) con persistencia real de directorio (`cd`) y colores ANSI.
+- 📲 **Redirección Nativa a la App Termux**: Botón directo `📲 Termux` y `📋 Copiar & Ir` para transferir el comando al portapapeles y saltar instantáneamente a la app nativa de Termux para ejecutar herramientas interactivas (`nano`, `r2`, `gdb`, `python`).
+- 🛑 **Finalización Inmediata de Tareas**: Botón **"🛑 Cancelar Tarea"** en la consola para abortar comandos colgados y botón **"🛑 Apagar"** en la barra superior para cerrar todo limpiamente desde el navegador.
 
 ---
 

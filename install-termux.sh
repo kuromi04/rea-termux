@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "=== [REA Termux] Preparando entorno en Termux ==="
 
 # Actualizar paquetes e instalar dependencias básicas
@@ -8,12 +10,12 @@ pkg update -y
 pkg install -y nodejs-lts git python
 
 # Clonar o verificar REA
-if [ ! -d "rea" ]; then
+if [ ! -d "$DIR/rea" ]; then
     echo "Clonando repositorio oficial de REA..."
-    git clone https://github.com/morluto/rea.git
+    git clone https://github.com/morluto/rea.git "$DIR/rea"
 fi
 
-cd rea
+cd "$DIR/rea"
 
 echo "Instalando dependencias npm..."
 npm install --engine-strict=false
@@ -48,7 +50,25 @@ exec node "$REA_SCRIPT" "$@"
 RUNNER
 chmod +x $PREFIX/bin/rea
 
+# Instalar y sincronizar controlador visual 'rea-menu'
+if [ -f "$DIR/rea-menu.sh" ]; then
+    echo "Instalando comando global 'rea-menu'..."
+    cp "$DIR/rea-menu.sh" $PREFIX/bin/rea-menu
+    chmod +x $PREFIX/bin/rea-menu
+    ln -sf $PREFIX/bin/rea-menu $PREFIX/bin/aegisforge-menu
+fi
+
+# Regenerar datos del grafo educativo
+if [ -f "$DIR/generate-neural-menu.js" ]; then
+    echo "Regenerando base de datos de grafo táctico y clusters educativos..."
+    cd "$DIR"
+    node generate-neural-menu.js
+fi
+
 echo "=== [REA Termux] ¡Instalación y compilación completada con éxito! ==="
-echo "Ahora puedes usar directamente: rea <comando>"
-echo "Ejemplo: rea --version"
-echo "O como servidor MCP: rea mcp"
+echo "Ahora puedes usar directamente:"
+echo "  • rea <comando>            (CLI directo)"
+echo "  • rea-menu                 (Iniciar menú táctico y visualizador web)"
+echo "  • rea-menu stop            (Finalizar servidor y tareas)"
+echo "  • rea-menu status          (Comprobar estado del servidor)"
+echo "  • rea mcp                  (Servidor para agentes IA)"
